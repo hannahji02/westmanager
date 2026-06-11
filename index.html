@@ -1,0 +1,1103 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>하키팀 통합 운영 시스템</title>
+<style>
+  :root{--ice:#eaf2f8;--rink:#0b1f33;--line:#c8d6e2;--blue:#1d6fb8;--blue-d:#114b7e;
+    --red:#c0392b;--green:#1f9d6b;--amber:#d68910;--ink:#0b1f33;--muted:#5b7184;--card:#fff;--gold:#c8a24b;}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,"Segoe UI","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+    background:var(--ice);color:var(--ink);line-height:1.5;-webkit-font-smoothing:antialiased}
+  header{background:var(--rink);color:#fff;padding:12px 16px;display:flex;align-items:center;
+    justify-content:space-between;position:sticky;top:0;z-index:50;border-bottom:3px solid var(--gold);gap:10px;flex-wrap:wrap}
+  .brand{display:flex;align-items:center;gap:9px;font-weight:800;font-size:16px}
+  .puck{width:20px;height:20px;border-radius:50%;background:var(--gold);box-shadow:inset 0 -3px 0 rgba(0,0,0,.25)}
+  .htools{display:flex;align-items:center;gap:8px}
+  .role-switch{display:flex;gap:5px;background:rgba(255,255,255,.08);padding:4px;border-radius:10px}
+  .role-switch button{background:transparent;border:0;color:#cbd9e6;padding:7px 12px;border-radius:7px;font-weight:600;cursor:pointer;font-size:12.5px}
+  .role-switch button.active{background:var(--gold);color:var(--rink)}
+  .gear{background:rgba(255,255,255,.1);border:0;color:#fff;width:36px;height:36px;border-radius:9px;cursor:pointer;font-size:17px}
+  .gear:hover{background:rgba(255,255,255,.22)}
+  .savebar{background:#fcf3e2;color:#8a5a08;font-size:11.5px;padding:7px 16px;text-align:center}
+  .wrap{max-width:1100px;margin:0 auto;padding:18px}
+  .tabs{display:flex;gap:4px;border-bottom:2px solid var(--line);margin-bottom:18px;flex-wrap:wrap}
+  .tabs button{background:none;border:0;padding:11px 14px;font-weight:700;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;font-size:13.5px}
+  .tabs button.active{color:var(--blue-d);border-bottom-color:var(--blue)}
+  /* ===== 원데이 클래스: 동일 구조·채도, 색만 진초록-연두 계열 ===== */
+  .oneday-tab.active{color:#15694f !important;border-bottom-color:#1f9e7a !important}
+  .oneday-scope{--od-deep:#0a3d2e;--od-mid:#1f9e7a;--od-soft:#e3f4ec;--od-line:#cfe6dc;--od-ink:#10221c;--od-muted:#5b7468}
+  .lead-od{background:#fff;border:1px solid var(--od-line);border-left:4px solid var(--od-mid);border-radius:12px;
+    padding:12px 14px;font-size:12.5px;color:var(--od-muted);line-height:1.6;margin-bottom:16px}
+  .od-statgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:16px}
+  .od-stat{background:#fff;border:1px solid var(--od-line);border-radius:12px;padding:15px}
+  .od-stat .v{font-size:24px;font-weight:800;color:var(--od-deep)}
+  .od-stat .l{font-size:11.5px;color:var(--od-muted);font-weight:600}
+  .od-stat.over .v{color:#c0392b}
+  .od-warn{background:#fae8e6;border:1px solid #f3b6b0;color:#922;border-radius:10px;padding:11px 14px;font-size:12.5px;font-weight:700;margin-bottom:14px}
+  .od-toolbar{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+  .od-btn{background:var(--od-mid)}
+  .od-btn:hover{background:var(--od-deep)}
+  .od-btn.ghost{background:#fff;color:var(--od-deep);border:1.5px solid var(--od-line)}
+  .od-card{background:#fff;border:1px solid var(--od-line);border-radius:14px;padding:12px;margin-bottom:10px;
+    display:grid;grid-template-columns:42px 1fr auto;gap:11px;align-items:center}
+  .od-card.done{background:#eef8f2;border-color:#bfe3d3}
+  .od-num{width:42px;height:42px;border-radius:11px;background:var(--od-deep);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:17px}
+  .od-card.done .od-num{background:var(--od-mid)}
+  .od-nm{font-weight:800;font-size:16px}
+  .od-meta{font-size:12px;color:var(--od-muted);margin-top:2px}
+  .od-badges{display:flex;gap:6px;margin-top:7px;flex-wrap:wrap}
+  .od-badge{font-size:11px;font-weight:800;padding:3px 9px;border-radius:8px}
+  .od-badge.g-L{background:#dcefe5;color:#1f6f57}.od-badge.g-M{background:#f2ead9;color:#9a6b15}
+  .od-badge.sk{background:#e7eef0;color:#2f5c66}.od-badge.fx{background:#fbf0d8;color:#9a6b15}
+  .od-checks{display:flex;flex-direction:column;gap:7px;align-items:flex-end}
+  .od-chk{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;color:var(--od-muted);cursor:pointer;user-select:none;white-space:nowrap}
+  .od-chk input{width:20px;height:20px;accent-color:var(--od-mid);cursor:pointer}
+  .od-overlay{position:fixed;inset:0;background:rgba(10,61,46,.4);opacity:0;pointer-events:none;transition:.2s;z-index:100}
+  .od-overlay.show{opacity:1;pointer-events:auto}
+  .od-panel{position:fixed;top:0;right:0;height:100%;width:min(420px,92vw);background:#fff;box-shadow:-8px 0 30px rgba(10,61,46,.18);transform:translateX(100%);transition:transform .22s ease;z-index:101;display:flex;flex-direction:column}
+  .od-panel.show{transform:translateX(0)}
+  .od-panel-head{display:flex;align-items:center;justify-content:space-between;padding:16px;border-bottom:1px solid var(--od-line);font-weight:800;color:var(--od-deep);font-size:15px}
+  .od-panel-body{padding:16px;overflow-y:auto}
+  .iconx{border:0;background:transparent;font-size:18px;cursor:pointer;color:var(--od-deep)}
+  .phint-od{font-size:11.5px;color:var(--od-muted);background:#f1f8f4;border:1px solid var(--od-line);border-radius:10px;padding:9px 11px;margin-bottom:16px;line-height:1.55}
+  .od-h3{font-size:11.5px;letter-spacing:.06em;color:var(--od-muted);margin-bottom:10px;font-weight:800}
+  .od-invrow{display:grid;grid-template-columns:1fr 80px;gap:7px;margin-bottom:7px;align-items:center}
+  .od-invrow .k{font-size:12px;font-weight:700}
+  .od-invrow input{border:1px solid var(--od-line);border-radius:8px;padding:6px 7px;font-size:12px;width:100%}
+  .od-memrow{border:1px solid var(--od-line);border-radius:11px;padding:9px;margin-bottom:8px;display:grid;grid-template-columns:1fr 60px 60px 28px;gap:6px;align-items:end}
+  .od-memrow .l2{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .od-memrow input,.od-memrow select{border:1px solid var(--od-line);border-radius:8px;padding:6px 7px;font-size:12px;width:100%}
+  .od-memrow .del{border:0;background:#f3e2dd;color:#c0392b;border-radius:8px;font-weight:700;cursor:pointer;font-size:13px;height:32px}
+  .od-memlbl{font-size:10px;color:var(--od-muted);font-weight:700;margin-bottom:2px;display:block}
+  .addbtn-od{width:100%;border:1px dashed var(--od-line);background:#f1f8f4;color:var(--od-deep);font-weight:700;font-size:13px;padding:10px;border-radius:11px;cursor:pointer;margin-top:4px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:16px}
+  .card h2{font-size:15px;margin-bottom:4px;display:flex;align-items:center;gap:8px}
+  .card .sub{color:var(--muted);font-size:12.5px;margin-bottom:14px}
+  .tbl-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  table{width:100%;border-collapse:collapse;font-size:13px;min-width:560px}
+  th,td{text-align:left;padding:9px 7px;border-bottom:1px solid var(--line);white-space:nowrap}
+  th{color:var(--muted);font-weight:600;font-size:11.5px}
+  tr:last-child td{border-bottom:0}
+  .num{display:inline-flex;align-items:center;justify-content:center;min-width:28px;height:28px;padding:0 6px;background:var(--rink);color:var(--gold);border-radius:7px;font-weight:800;font-size:12.5px}
+  .num.none{background:#eef3f7;color:#9aabba;font-weight:600;font-size:10.5px}
+  .badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11.5px;font-weight:700}
+  .lv-기초반{background:#e8f4ef;color:#1f9d6b}.lv-초급반{background:#e7f0fa;color:#1d6fb8}
+  .lv-중급반{background:#fdf0e0;color:#d68910}.lv-상급반{background:#fae8e6;color:#c0392b}.lv-{background:#eef1f4;color:#8295a5}
+  .pill-no{background:#f1f4f7;color:#90a1b0}.pill-fee{background:#e7f0fa;color:var(--blue-d)}.pill-eq{background:#fdf0e0;color:var(--amber)}
+  .pill-ok{background:#e6f5ee;color:var(--green)}
+  .star{color:var(--gold)}
+  .btn{background:var(--blue);color:#fff;border:0;padding:9px 14px;border-radius:9px;font-weight:700;cursor:pointer;font-size:13px}
+  .btn:hover{background:var(--blue-d)}
+  .btn.ghost{background:#fff;color:var(--blue-d);border:1.5px solid var(--line)}
+  .btn.sm{padding:5px 10px;font-size:12px}.btn.danger{background:var(--red)}
+  .btn.x{background:#fdeceb;color:var(--red);padding:4px 9px;font-size:11.5px;font-weight:800}
+  .btn.x:hover{background:var(--red);color:#fff}
+  .btn:disabled{background:#cdd8e2;color:#8a9aac;cursor:not-allowed}
+  select,input{font:inherit;padding:7px 9px;border:1.5px solid var(--line);border-radius:8px;font-size:12.5px}
+  .row{display:flex;gap:9px;flex-wrap:wrap;align-items:center}
+  .stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:16px}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:15px}
+  .stat.clickable{cursor:pointer;transition:.15s}.stat.clickable:hover{border-color:var(--blue);box-shadow:0 3px 12px rgba(29,111,184,.15)}
+  .stat .v{font-size:24px;font-weight:800;color:var(--blue-d)}.stat .l{font-size:11.5px;color:var(--muted);font-weight:600}
+  .stat .hintclick{font-size:10.5px;color:var(--blue);font-weight:700;margin-top:3px}
+  .lvset{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 2px}
+  .lvset label{display:flex;align-items:center;gap:4px;padding:5px 10px;border:1.5px solid var(--line);border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;user-select:none}
+  .lvset input{display:none}.lvset label.on{background:var(--rink);color:#fff;border-color:var(--rink)}
+  .game-card{border:1px solid var(--line);border-radius:12px;padding:15px;margin-bottom:12px}
+  .game-card .gt{font-weight:800;font-size:14.5px}.game-card .gm{color:var(--muted);font-size:12.5px;margin-top:2px}
+  .exbox{margin-top:12px;padding-top:12px;border-top:1px dashed var(--line)}
+  .exgrid{display:flex;flex-wrap:wrap;gap:6px}
+  .exlabel{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;padding:4px 9px;border:1.5px solid var(--line);border-radius:18px;cursor:pointer;user-select:none;background:#fff}
+  .exlabel input{accent-color:var(--red);cursor:pointer}
+  .exlabel.ex{background:#fdeceb;border-color:#f3b6b0;color:var(--red);text-decoration:line-through}
+  .gamebar{display:flex;align-items:center;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid var(--line);flex-wrap:wrap}
+  .pub-on{background:#e6f5ee;color:var(--green);margin-left:6px}
+  .pub-off{background:#f1f4f7;color:#90a1b0;margin-left:6px}
+  .game-card.unpub{opacity:.82;border-style:dashed}
+  .game-card.editing{border:2px solid var(--blue);background:#f7fbff}
+  .pubtoggle{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;font-weight:700;cursor:pointer;color:var(--rink)}
+  .pubtoggle input{display:none}
+  .pubtoggle .track{width:38px;height:22px;border-radius:20px;background:#cdd8e2;position:relative;transition:.18s;flex-shrink:0}
+  .pubtoggle .track::after{content:"";position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;transition:.18s;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+  .pubtoggle input:checked + .track{background:var(--green)}
+  .pubtoggle input:checked + .track::after{left:18px}
+  .league{display:inline-block;font-weight:800;font-size:11px;padding:2px 8px;border-radius:6px;margin-right:6px}
+  .lg-아동연{background:#e7f0fa;color:var(--blue-d)}.lg-GIHL{background:#fae8e6;color:var(--red)}
+  .vote-bar{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+  .notice{background:#fcf3e2;border:1px solid #f0d9a8;color:#8a5a08;border-radius:10px;padding:12px 14px;font-size:13px;margin-top:10px}
+  .hint{font-size:11.5px;color:var(--muted)}
+  .member-self{background:linear-gradient(135deg,#114b7e,#1d6fb8);color:#fff;border:0}
+  .member-self .sub{color:#bcd6ee}
+  .pay-status{display:flex;align-items:center;gap:24px;flex-wrap:wrap;margin-top:14px}
+  .demo-flag{background:var(--amber);color:#fff;font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:5px;margin-left:6px}
+  .chk{width:17px;height:17px;cursor:pointer;accent-color:var(--blue)}
+  .sortbtn{border:0;background:#eef3f7;color:var(--muted);font-size:9px;padding:2px 4px;border-radius:5px;cursor:pointer;letter-spacing:-1px;vertical-align:middle}
+  .sortbtn.asc{background:var(--blue);color:#fff}.sortbtn.desc{background:var(--rink);color:var(--gold)}
+  .filtbtn{border:0;background:#eef3f7;color:var(--muted);font-size:11px;padding:1px 6px;border-radius:5px;cursor:pointer;vertical-align:middle;font-weight:800}
+  .filtbtn.active{background:var(--blue);color:#fff}
+  .filter-pop{position:fixed;z-index:120;display:none;background:#fff;border:1px solid var(--line);
+    border-radius:10px;box-shadow:0 8px 24px rgba(11,31,51,.18);padding:10px;min-width:160px}
+  .filter-pop.open{display:block}
+  .fp-head{font-size:12px;font-weight:800;color:var(--rink);margin-bottom:8px}
+  .fp-list{max-height:200px;overflow:auto;display:flex;flex-direction:column;gap:5px;margin-bottom:10px}
+  .fp-list label{display:flex;align-items:center;gap:7px;font-size:12.5px;cursor:pointer;padding:3px 4px;border-radius:6px}
+  .fp-list label:hover{background:#f5f9fc}
+  .fp-btns{display:flex;gap:6px;justify-content:flex-end}
+  .active-filters{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+  .fchip{background:#e7f0fa;color:var(--blue-d);font-size:11.5px;font-weight:700;padding:4px 10px;border-radius:20px;display:inline-flex;align-items:center;gap:6px}
+  .fchip button{border:0;background:none;color:var(--blue-d);cursor:pointer;font-weight:900;font-size:13px;line-height:1}
+  .jno-input{width:62px;text-align:center;font-weight:800;color:var(--rink);padding:5px 4px;
+    border:1.5px solid var(--line);border-radius:7px;background:#fff4d6}
+  .jno-input.empty{background:#f1f4f7;color:#9aabba;font-weight:600}
+  .jno-input:focus{border-color:var(--blue);outline:none}
+  .poschip{border:1.5px solid var(--line);background:#fff;border-radius:7px;padding:5px 9px;font-size:11.5px;
+    font-weight:700;color:var(--rink);cursor:pointer;white-space:nowrap}
+  .poschip:hover{border-color:var(--blue)}
+  .lvdash{color:#b3c0cc;font-weight:800;font-size:15px;padding-left:8px}
+  .pay-toggle{display:inline-flex;border:1.5px solid var(--line);border-radius:7px;overflow:hidden}
+  .pay-toggle button{border:0;background:#fff;padding:4px 9px;font-size:11px;font-weight:700;cursor:pointer;color:#90a1b0}
+  .pay-toggle button.on{background:var(--green);color:#fff}
+  /* 일괄 액션바 */
+  .bulkbar{position:sticky;bottom:0;background:var(--rink);color:#fff;border-radius:12px;padding:12px 14px;
+    display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:14px;box-shadow:0 -4px 16px rgba(11,31,51,.18)}
+  .bulkbar.hidden{display:none}
+  .bulkbar .cnt{font-weight:800;color:var(--gold)}
+  .bulkbar select{background:#fff}
+  /* modal */
+  .ov{position:fixed;inset:0;background:rgba(11,31,51,.55);display:none;align-items:flex-start;justify-content:center;z-index:100;padding:30px 12px;overflow:auto}
+  .ov.open{display:flex}
+  .modal{background:#fff;border-radius:16px;max-width:760px;width:100%;overflow:hidden}
+  .modal .mh{background:var(--rink);color:#fff;padding:15px 18px;display:flex;justify-content:space-between;align-items:center}
+  .modal .mh b{font-size:15px}
+  .modal .mc{padding:18px;max-height:64vh;overflow:auto}
+  .modal .close{background:none;border:0;color:#cbd9e6;font-size:22px;cursor:pointer}
+  .addrow{background:#f5f9fc;border:1px dashed var(--line);border-radius:10px;padding:13px;margin-bottom:16px}
+  /* 등번호 그리드 */
+  .jgrid{display:grid;grid-template-columns:repeat(10,1fr);gap:5px}
+  .jcell{aspect-ratio:1;border:1px solid var(--line);border-radius:7px;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;font-size:10px;padding:2px;text-align:center;background:#fafcfe;cursor:pointer;transition:.12s}
+  .jcell:hover{border-color:var(--blue);box-shadow:0 0 0 2px rgba(29,111,184,.18)}
+  .jcell .jn{font-size:10px;color:#9aabba;font-weight:700}
+  .jcell.filled{background:#fff4d6;border-color:var(--gold)}
+  .jcell.filled .jname{font-size:11px;font-weight:800;color:var(--rink);line-height:1.1}
+  .jcell.filled .jn{color:var(--amber)}
+  .jcell.picking{grid-column:span 2;aspect-ratio:auto;background:#fff;border-color:var(--blue);
+    box-shadow:0 0 0 2px rgba(29,111,184,.25);gap:4px;padding:6px;cursor:default}
+  .jcell.picking:hover{box-shadow:0 0 0 2px rgba(29,111,184,.25)}
+  .jpick-sel{width:100%;font-size:11px;padding:4px}
+  .jpick-btns{display:flex;gap:4px;width:100%}
+  .jpick-btns button{flex:1;border:0;border-radius:6px;padding:4px 0;font-size:11px;font-weight:800;cursor:pointer;background:var(--blue);color:#fff}
+  .jpick-btns button.c{background:#eef1f4;color:var(--muted)}
+  .jlegend{display:flex;gap:14px;margin-bottom:12px;font-size:12px}
+  .jlegend span{display:inline-flex;align-items:center;gap:5px}
+  .swatch{width:14px;height:14px;border-radius:4px;display:inline-block;border:1px solid var(--line)}
+  @media(max-width:680px){
+    .wrap{padding:12px}.pay-status{gap:14px}
+    .jgrid{grid-template-columns:repeat(5,1fr)}
+    .jcell .jname{font-size:9.5px}
+    header .brand{font-size:14px}
+    .bulkbar{flex-direction:column;align-items:stretch}
+    .bulkbar select,.bulkbar .btn{width:100%}
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><span class="puck"></span> 하키팀 운영 시스템 <span class="demo-flag">DEMO</span></div>
+  <div class="htools">
+    <div class="role-switch">
+      <button id="r-admin" class="active" onclick="setRole('admin')">운영자</button>
+      <button id="r-member" onclick="setRole('member')">회원</button>
+    </div>
+    <button class="gear" id="gearBtn" title="회원 추가/삭제" onclick="openManage()">&#9881;</button>
+    <button class="gear" id="resetBtn" title="초기 데모 데이터로 되돌리기" onclick="resetDB()">&#8635;</button>
+  </div>
+</header>
+<div class="savebar">데모 모드 · 변경 내용은 <b>이 브라우저에 자동 저장</b>되어 새로고침해도 유지됩니다 (이 기기·브라우저 한정, 다른 사람과 공유 안 됨). 우측 ↻ 버튼으로 초기화 · 영구·공유 저장은 Supabase 연동 단계</div>
+
+<div class="wrap">
+  <div id="view-admin">
+    <div class="tabs">
+      <button class="active" onclick="adminTab('roster',this)">회원 통합 관리</button>
+      <button onclick="adminTab('games',this)">경기 등록 · 투표</button>
+      <button class="oneday-tab" onclick="adminTab('oneday',this)">원데이 클래스</button>
+    </div>
+
+    <section id="a-roster">
+      <div class="stat-grid">
+        <div class="stat"><div class="v" id="s-total">0</div><div class="l">전체 회원</div></div>
+        <div class="stat clickable" onclick="openJersey()"><div class="v" id="s-jersey">0</div><div class="l">등번호 배정</div><div class="hintclick">눌러서 배치도 보기 ▦</div></div>
+        <div class="stat"><div class="v" id="s-nojersey">0</div><div class="l">등번호 미배정</div></div>
+        <div class="stat"><div class="v" id="s-thismonth">0</div><div class="l">이번 달 납부</div></div>
+      </div>
+      <div class="card">
+        <h2>회원 통합 명단</h2>
+        <div id="active-filters" class="active-filters"></div>
+        <div class="tbl-scroll">
+        <table>
+          <thead><tr>
+            <th><input type="checkbox" class="chk" id="chk-all" onclick="toggleAll(this)"></th>
+            <th>등번호 <button class="sortbtn" onclick="toggleSort('no')" id="sort-no" title="정렬">▲▼</button></th>
+            <th>이름 <button class="sortbtn" onclick="toggleSort('name')" id="sort-name" title="정렬">▲▼</button></th>
+            <th>포지션 <button class="filtbtn" onclick="openFilter('pos',this,event)" id="filt-pos" title="필터">▾</button></th>
+            <th>포지션 <button class="filtbtn" onclick="openFilter('pos',this,event)" id="filt-pos" title="필터">▾</button></th>
+            <th>레벨 <button class="filtbtn" onclick="openFilter('level',this,event)" id="filt-level" title="필터">▾</button></th>
+            <th>회비유형 <button class="filtbtn" onclick="openFilter('fee',this,event)" id="filt-fee" title="필터">▾</button></th>
+            <th>이번달 <button class="filtbtn" onclick="openFilter('paidThis',this,event)" id="filt-paidThis" title="필터">▾</button></th>
+            <th>다음달 <button class="filtbtn" onclick="openFilter('paidNext',this,event)" id="filt-paidNext" title="필터">▾</button></th>
+            <th>장비 <button class="filtbtn" onclick="openFilter('equip',this,event)" id="filt-equip" title="필터">▾</button></th>
+          </tr></thead>
+          <tbody id="tb-roster"></tbody>
+        </table>
+        </div>
+        <div class="bulkbar hidden" id="bulkbar">
+          <span class="cnt"><span id="bulk-cnt">0</span>명 선택됨</span>
+          <select id="bulk-field" onchange="bulkFieldChange()">
+            <option value="pos">포지션</option>
+            <option value="level">레벨</option>
+            <option value="fee">회비유형</option>
+            <option value="equip">장비대여</option>
+            <option value="paidThis">이번달 납부</option>
+            <option value="paidNext">다음달 납부</option>
+          </select>
+          <select id="bulk-value"></select>
+          <button class="btn sm" onclick="applyBulk()">선택 회원에 일괄 적용</button>
+          <button class="btn sm ghost" onclick="clearSel()" style="color:#fff;border-color:rgba(255,255,255,.4);background:transparent">선택 해제</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 필터 드롭다운 (공용, 떠 있는 패널) -->
+    <div id="filter-pop" class="filter-pop">
+      <div class="fp-head">필터 <span class="hint" id="fp-title"></span></div>
+      <div class="fp-list" id="fp-list"></div>
+      <div class="fp-btns">
+        <button class="btn sm ghost" onclick="clearFilter()">해제</button>
+        <button class="btn sm" onclick="applyFilter()">적용</button>
+      </div>
+    </div>
+
+    <!-- 포지션 선택 팝업 (겸직 중복선택) -->
+    <div id="pos-pop" class="filter-pop">
+      <div class="fp-head">포지션 (겸직 가능)</div>
+      <div class="fp-list" id="pp-list"></div>
+      <div class="fp-btns"><button class="btn sm" onclick="applyPos()">적용</button></div>
+    </div>
+
+    <section id="a-games" style="display:none">
+      <div class="card">
+        <h2>경기 일정 등록</h2>
+        <div class="sub">대상 레벨을 지정하면, 해당 레벨이 아닌 회원은 회원 화면에서 투표가 비활성화됩니다.</div>
+        <div class="row" style="margin-bottom:8px">
+          <input id="ng-title" placeholder="경기 제목 (예: [아동연] vs OO)" style="flex:1;min-width:170px">
+          <input id="ng-date" type="date" value="2026-06-21">
+          <input id="ng-time" type="time" value="22:00">
+        </div>
+        <div class="row"><input id="ng-place" placeholder="장소" style="flex:1;min-width:170px"></div>
+        <div style="margin-top:10px"><span class="hint">대상 레벨 (복수 선택)</span>
+          <div class="lvset" id="ng-levels">
+            <label><input type="checkbox" value="기초반">기초반</label>
+            <label class="on"><input type="checkbox" value="초급반" checked>초급반</label>
+            <label class="on"><input type="checkbox" value="중급반" checked>중급반</label>
+            <label class="on"><input type="checkbox" value="상급반" checked>상급반</label>
+          </div>
+        </div>
+        <button class="btn" style="margin-top:12px" onclick="addGame()">경기 등록</button>
+      </div>
+      <div class="card"><h2>등록된 경기 · 투표 현황</h2><div class="sub">실시간 참여 집계입니다.</div><div id="admin-games"></div></div>
+    </section>
+
+    <section id="a-oneday" class="oneday-scope" style="display:none">
+      <div class="lead-od">
+        체험 전날 업체에서 받은 명단(이름·키·발사이즈)을 등록하면, 보유 재고에 맞춰 <b>장비(M/L)</b>와 <b>스케이트 사이즈</b>가 자동 매핑됩니다. 당일엔 운영진이 각자 폰으로 이 화면을 보며 전달 완료를 체크합니다. 정회원 명단과는 완전히 분리된 임시 게스트 명단입니다.
+      </div>
+      <div class="od-statgrid">
+        <div class="od-stat"><div class="v" id="od-total">0</div><div class="l">총원</div></div>
+        <div class="od-stat"><div class="v" id="od-done">0</div><div class="l">응대 완료</div></div>
+        <div class="od-stat"><div class="v" id="od-m">0</div><div class="l" id="od-lblM">M 배정</div></div>
+        <div class="od-stat"><div class="v" id="od-l">0</div><div class="l" id="od-lblL">L 배정</div></div>
+      </div>
+      <div id="od-warn"></div>
+      <div class="od-toolbar">
+        <button class="btn od-btn" onclick="openOnedaySettings()">⚙ 재고·명단 설정</button>
+        <button class="btn od-btn ghost" onclick="resetOnedayChecks()">전달 체크 초기화</button>
+      </div>
+      <div id="od-list"></div>
+    </section>
+
+    <!-- 원데이 설정 슬라이드 패널 -->
+    <div id="od-overlay" class="od-overlay"></div>
+    <aside id="od-panel" class="od-panel">
+      <div class="od-panel-head"><span>재고 · 명단 설정</span><button class="iconx" onclick="closeOnedaySettings()">✕</button></div>
+      <div class="od-panel-body">
+        <p class="phint-od">여기서 바꾸면 메인 화면에 즉시 반영됩니다. 변경 내용은 이 브라우저에 저장됩니다.</p>
+        <h3 class="od-h3">보유 재고</h3>
+        <div id="od-invEdit"></div>
+        <h3 class="od-h3" style="margin-top:18px">명단 (게스트)</h3>
+        <div id="od-memEdit"></div>
+        <button class="addbtn-od" onclick="addOnedayMember()">+ 게스트 추가</button>
+      </div>
+    </aside>
+  </div>
+
+  <div id="view-member" style="display:none">
+    <div class="row" style="margin-bottom:16px">
+      <label class="hint">로그인한 회원 (데모용 전환)</label>
+      <select id="who" onchange="renderMember()"></select>
+    </div>
+    <div class="card member-self">
+      <h2 id="m-name">—</h2><div class="sub" id="m-meta">—</div>
+      <div class="pay-status">
+        <div><div class="hint" style="color:#bcd6ee">내 회비 유형</div><div style="font-size:17px;font-weight:800" id="m-product">—</div></div>
+        <div><div class="hint" style="color:#bcd6ee">이번 달 납부</div><div style="font-size:17px;font-weight:800" id="m-paid">—</div></div>
+        <div><div class="hint" style="color:#bcd6ee">장비 대여</div><div style="font-size:17px;font-weight:800" id="m-equip">—</div></div>
+      </div>
+      <div id="m-paynotice"></div>
+    </div>
+    <div class="card"><h2>예정된 경기 참여 투표</h2><div id="member-games"></div></div>
+  </div>
+</div>
+
+<!-- 등번호 배치도 모달 -->
+<div class="ov" id="jerseyOv">
+  <div class="modal">
+    <div class="mh"><b>&#9638; 등번호 배치도 (1–100)</b><button class="close" onclick="closeJersey()">&times;</button></div>
+    <div class="mc">
+      <div class="jlegend">
+        <span><span class="swatch" style="background:#fff4d6;border-color:var(--gold)"></span> 배정됨</span>
+        <span><span class="swatch" style="background:#fafcfe"></span> 비어 있음</span>
+        <span class="hint" style="margin-left:auto">빈칸 클릭=배정 · 배정칸 클릭=해제</span>
+      </div>
+      <div class="jgrid" id="jgrid"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 회원 추가/삭제 모달 -->
+<div class="ov" id="manageOv">
+  <div class="modal">
+    <div class="mh"><b>&#9881; 회원 추가 · 삭제</b><button class="close" onclick="closeManage()">&times;</button></div>
+    <div class="mc">
+      <div class="addrow">
+        <div class="hint" style="margin-bottom:8px;font-weight:700">새 회원 추가</div>
+        <div class="row">
+          <input id="add-name" placeholder="이름" style="width:110px">
+          <input id="add-no" type="number" placeholder="등번호(선택)" style="width:120px">
+          <select id="add-fee"><option value="X">회비 없음</option><option value="월 4">월 4</option><option value="월 8">월 8</option><option value="통합">통합</option></select>
+          <label class="hint"><input type="checkbox" id="add-eq"> 장비대여</label>
+          <button class="btn sm" onclick="addMember()">추가</button>
+        </div>
+      </div>
+      <div class="tbl-scroll"><table>
+        <thead><tr><th>이름</th><th>등번호</th><th>회비</th><th>장비</th><th></th></tr></thead>
+        <tbody id="tb-manage"></tbody>
+      </table></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============ dataService (격리 계층, Supabase 교체지점) ============ */
+const INITIAL_DB = {
+  members: [
+  {id:1, name:"강다연", no:null, fee:"X", feeRaw:"X", special:false, equip:false, pos:[], level:"", paidThis:false, paidNext:false},
+  {id:2, name:"강소현", no:21, fee:"통합", feeRaw:"통합", special:false, equip:false, pos:[], level:"", paidThis:false, paidNext:false},
+  {id:3, name:"강재우", no:92, fee:"X", feeRaw:"X", special:false, equip:true, pos:[], level:"", paidThis:false, paidNext:false},
+  {id:4, name:"곽수언", no:30, fee:"X", feeRaw:"X", special:false, equip:false, pos:[], level:"", paidThis:false, paidNext:false},
+  {id:5, name:"권기석", no:24, fee:"X", feeRaw:"X", special:false, equip:false, pos:[], level:"", paidThis:false, paidNext:false},
+  {id:6, name:"길동규", no:4, fee:"X", feeRaw:"X", special:false, equip:true, pos:[], level:"", paidThis:false, paidNext:false},
+  {id:7, name:"김가연", no:20, fee:"X", feeRaw:"X", special:false, equip:false, pos:[], level:"", paidThis:false, paidNext:false},
+  {id:8, name:"김기준", no:95, fee:"X", feeRaw:"X", special:false, equip:false, pos:[], level:"", paidThis:false, paidNext:false},
+  {id:9, name:"김동현", no:56, fee:"X", feeRaw:"X", special:false, equip:false, pos:[], level:"", paidThis:false, paidNext:false},
+  {id:10, name:"김보라", no:51, fee:"X", feeRaw:"X", special:false, equip:true, pos:[], level:"", paidThis:false, paidNext:false},
+  {id:11, name:"김석현", no:10, fee:"통합", feeRaw:"통합", special:false, equip:false, pos:[], level:"", paidThis:false, paidNext:false},
+  {id:12, name:"김성태", no:11, fee:"X", feeRaw:"X", special:false, equip:false, pos:[], level:"", paidThis:false, paidNext:false},
+  {id:13, name:"김세민", no:36, fee:"월 4", feeRaw:"월 4", special:false, equip:false, pos:[], level:"", paidThis:false, paidNext:false},
+  {id:14, name:"김수현", no:6, fee:"X", feeRaw:"X", special:false, equip:false, pos:[], level:"", paidThis:false, paidNext:false},
+  {id:15, name:"김예은", no:null, fee:"X", feeRaw:"X", special:false, equip:false, pos:[], level:"", paidThis:false, paidNext:false},
+  {id:16, name:"김용찬", no:89, fee:"X", feeRaw:"X", special:false, equip:false, pos:[], level:"", paidThis:false, paidNext:false},
+  {id:17, name:"김주연", no:46, fee:"11", feeRaw:"11", special:true, equip:false, pos:[], level:"", paidThis:false, paidNext:false},
+  {id:18, name:"김준성", no:23, fee:"X", feeRaw:"X", special:false, equip:false, pos:[], level:"", paidThis:false, paidNext:false},
+  {id:19, name:"김흥재", no:29, fee:"월 8", feeRaw:"월 8", special:false, equip:false, pos:[], level:"", paidThis:false, paidNext:false},
+  {id:20, name:"류인균", no:null, fee:"X", feeRaw:"X", special:false, equip:false, pos:[], level:"", paidThis:false, paidNext:false},
+  {id:21, name:"매버릭", no:84, fee:"월 4", feeRaw:"월 4", special:false, equip:true, pos:[], level:"", paidThis:false, paidNext:false},
+  {id:22, name:"박수민", no:37, fee:"15", feeRaw:"15", special:true, equip:true, pos:[], level:"", paidThis:false, paidNext:false},
+  {id:23, name:"박시은", no:null, fee:"월 4", feeRaw:"월 4", special:false, equip:false, pos:[], level:"", paidThis:false, paidNext:false},
+  {id:24, name:"백승찬", no:1, fee:"X", feeRaw:"X", special:false, equip:false, pos:[], level:"", paidThis:false, paidNext:false},
+  {id:25, name:"변종웅", no:91, fee:"월 4", feeRaw:"월 4", special:false, equip:true, pos:[], level:"", paidThis:false, paidNext:false},
+  {id:26, name:"산드로", no:93, fee:"X", feeRaw:"X", special:false, equip:false, pos:[], level:"", paidThis:false, paidNext:false},
+  {id:27, name:"송현진", no:null, fee:"월 4", feeRaw:"월 4", special:false, equip:false, pos:[], level:"", paidThis:false, paidNext:false},
+  {id:28, name:"안지용", no:77, fee:"월 4", feeRaw:"월 4", special:false, equip:false, pos:[], level:"", paidThis:false, paidNext:false},
+  {id:29, name:"여성민", no:null, fee:"X", feeRaw:"X", special:false, equip:true, pos:[], level:"", paidThis:false, paidNext:false},
+  {id:30, name:"유광현", no:96, fee:"11", feeRaw:"11", special:true, equip:false, pos:[], level:"", paidThis:false, paidNext:false},
+  {id:31, name:"유예찬", no:34, fee:"X", feeRaw:"X", special:false, equip:false, pos:[], level:"", paidThis:false, paidNext:false},
+  {id:32, name:"유재동", no:17, fee:"X", feeRaw:"X", special:false, equip:false, pos:[], level:"", paidThis:false, paidNext:false},
+  {id:33, name:"이규민", no:null, fee:"X", feeRaw:"X", special:false, equip:false, pos:[], level:"", paidThis:false, paidNext:false},
+  {id:34, name:"이다연", no:null, fee:"월 4", feeRaw:"월 4", special:false, equip:false, pos:[], level:"", paidThis:false, paidNext:false},
+  {id:35, name:"이도윤", no:22, fee:"X", feeRaw:"X", special:false, equip:false, pos:[], level:"", paidThis:false, paidNext:false},
+  {id:36, name:"이병준", no:null, fee:"X", feeRaw:"X", special:false, equip:true, pos:[], level:"", paidThis:false, paidNext:false},
+  {id:37, name:"이태경", no:44, fee:"월 4", feeRaw:"월 4", special:false, equip:true, pos:[], level:"", paidThis:false, paidNext:false},
+  {id:38, name:"장병주", no:88, fee:"통합", feeRaw:"통합", special:false, equip:false, pos:[], level:"", paidThis:false, paidNext:false},
+  {id:39, name:"장재원", no:99, fee:"11", feeRaw:"11", special:true, equip:false, pos:[], level:"", paidThis:false, paidNext:false},
+  {id:40, name:"정선경", no:7, fee:"X", feeRaw:"X", special:false, equip:true, pos:[], level:"", paidThis:false, paidNext:false},
+  {id:41, name:"정정하", no:13, fee:"X", feeRaw:"X", special:false, equip:false, pos:[], level:"", paidThis:false, paidNext:false},
+  {id:42, name:"조성무", no:71, fee:"X", feeRaw:"X", special:false, equip:true, pos:[], level:"", paidThis:false, paidNext:false},
+  {id:43, name:"조우제", no:31, fee:"통합", feeRaw:"월,통합", special:false, equip:true, pos:[], level:"", paidThis:false, paidNext:false},
+  {id:44, name:"지병흔", no:null, fee:"X", feeRaw:"X", special:false, equip:false, pos:[], level:"", paidThis:false, paidNext:false},
+  {id:45, name:"지혜은", no:8, fee:"11", feeRaw:"11", special:true, equip:true, pos:[], level:"", paidThis:false, paidNext:false},
+  {id:46, name:"최정학", no:null, fee:"11", feeRaw:"11", special:true, equip:true, pos:[], level:"", paidThis:false, paidNext:false},
+  {id:47, name:"최준성", no:5, fee:"월 8", feeRaw:"월 8", special:false, equip:false, pos:[], level:"", paidThis:false, paidNext:false},
+  {id:48, name:"추현용", no:9, fee:"월 4", feeRaw:"월 4", special:false, equip:false, pos:[], level:"", paidThis:false, paidNext:false},
+  {id:49, name:"허다연", no:27, fee:"X", feeRaw:"X", special:false, equip:true, pos:[], level:"", paidThis:false, paidNext:false},
+  {id:50, name:"허진희", no:47, fee:"월 4", feeRaw:"월 4", special:false, equip:true, pos:[], level:"", paidThis:false, paidNext:false},
+  {id:51, name:"홍창의", no:14, fee:"월 4", feeRaw:"월 4", special:false, equip:true, pos:[], level:"", paidThis:false, paidNext:false},
+  {id:52, name:"홍혜련", no:null, fee:"X", feeRaw:"X", special:false, equip:false, pos:[], level:"", paidThis:false, paidNext:false},
+  {id:53, name:"황상하", no:null, fee:"월 8", feeRaw:"월 8", special:false, equip:false, pos:[], level:"", paidThis:false, paidNext:false}
+],
+  games: [
+    {id:1, league:"아동연", title:"vs 제니우스", date:"2026-06-12", time:"23:00", place:"목동 아이스링크", levels:["초급반","중급반","상급반"], excluded:[], published:true, votes:{}},
+    {id:2, league:"아동연", title:"vs 제니우스", date:"2026-06-16", time:"23:00", place:"제니스 아이스링크", levels:["초급반","중급반","상급반"], excluded:[], published:true, votes:{}},
+    {id:3, league:"GIHL",  title:"vs 연합팀",  date:"2026-06-18", time:"22:00", place:"고양 메가 아이스링크", levels:["기초반","초급반","중급반","상급반"], excluded:[], published:true, votes:{}},
+  ],
+  onedayInv: {
+    "gear-M":5, "gear-L":13, "skate-3-4":5, "skate-5":2, "skate-6-7":6, "skate-8":6
+  },
+  oneday: [
+    {gid:1, name:"손예진", h:184, f:275, gear:"L", skate:"8", flex:false},
+    {gid:2, name:"공유",   h:178, f:275, gear:"L", skate:"8", flex:false},
+    {gid:3, name:"송혜교", h:173, f:275, gear:"L", skate:"8", flex:false},
+    {gid:4, name:"유재석", h:172, f:265, gear:"L", skate:"8", flex:false},
+    {gid:5, name:"아이유", h:170, f:255, gear:"L", skate:"6-7", flex:false},
+    {gid:6, name:"임영웅", h:168, f:260, gear:"L", skate:"8", flex:false},
+    {gid:7, name:"싸이",   h:167, f:250, gear:"L", skate:"6-7", flex:false},
+    {gid:8, name:"지드래곤", h:166, f:245, gear:"L", skate:"6-7", flex:true},
+    {gid:9, name:"수지",   h:165, f:240, gear:"L", skate:"6-7", flex:true},
+    {gid:10, name:"박보검", h:165, f:230, gear:"L", skate:"3-4", flex:false},
+    {gid:11, name:"차은우", h:164, f:240, gear:"L", skate:"6-7", flex:true},
+    {gid:12, name:"제니",   h:164, f:240, gear:"L", skate:"6-7", flex:true},
+    {gid:13, name:"카리나", h:164, f:225, gear:"L", skate:"3-4", flex:false},
+    {gid:14, name:"장원영", h:163, f:230, gear:"M", skate:"3-4", flex:false},
+    {gid:15, name:"현빈",   h:161, f:245, gear:"M", skate:"5", flex:true},
+    {gid:16, name:"전지현", h:158, f:235, gear:"M", skate:"5", flex:true},
+    {gid:17, name:"구교환", h:157, f:230, gear:"M", skate:"3-4", flex:false},
+    {gid:18, name:"고윤정", h:155, f:220, gear:"M", skate:"3-4", flex:false}
+  ],
+  onedayChecks: {}
+};
+/* ===== localStorage 영속화 (본인 브라우저 한정 저장) ===== */
+const STORE_KEY='west-hockey-demo-v2';
+let DB;
+(function loadDB(){
+  try{
+    const saved=localStorage.getItem(STORE_KEY);
+    DB = saved ? JSON.parse(saved) : JSON.parse(JSON.stringify(INITIAL_DB));
+  }catch(e){ DB = JSON.parse(JSON.stringify(INITIAL_DB)); }
+  // 구버전 저장본 백필: 원데이 키 없으면 초기값 주입
+  if(!DB.oneday){ DB.oneday=JSON.parse(JSON.stringify(INITIAL_DB.oneday)); }
+  if(!DB.onedayInv){ DB.onedayInv=JSON.parse(JSON.stringify(INITIAL_DB.onedayInv)); }
+  if(!DB.onedayChecks){ DB.onedayChecks={}; }
+})();
+let _seeded = !!localStorage.getItem(STORE_KEY); // 저장본이 있으면 시드 생략
+function saveDB(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(DB)); }catch(e){} }
+function resetDB(){
+  if(!confirm('모든 변경을 지우고 초기 데모 데이터로 되돌릴까요?')) return;
+  localStorage.removeItem(STORE_KEY);
+  DB = JSON.parse(JSON.stringify(INITIAL_DB));
+  seedDemo();
+  currentMember=(DB.members.find(m=>m.name==='지혜은')||DB.members[0]).id;
+  saveDB(); refreshAll(); renderAdminGames();
+  if(role==='member'){ fillWho(); renderMember(); }
+}
+const dataService = {
+  getMembers:()=>DB.members,
+  getMember:(id)=>DB.members.find(m=>m.id===id),
+  updateMember:(id,patch)=>{Object.assign(dataService.getMember(id),patch);saveDB();},
+  addMember:(m)=>{m.id=Math.max(0,...DB.members.map(x=>x.id))+1;DB.members.push(m);saveDB();return m;},
+  removeMember:(id)=>{DB.members=DB.members.filter(m=>m.id!==id);saveDB();},
+  getGames:()=>DB.games,
+  addGame:(g)=>{g.id=Date.now();g.votes={};g.excluded=g.excluded||[];g.published=false;DB.games.push(g);saveDB();},
+  updateGame:(gid,patch)=>{Object.assign(DB.games.find(x=>x.id===gid),patch);saveDB();},
+  togglePublish:(gid)=>{const g=DB.games.find(x=>x.id===gid);g.published=!g.published;saveDB();},
+  removeGame:(gid)=>{DB.games=DB.games.filter(x=>x.id!==gid);saveDB();},
+  castVote:(gid,mid,v)=>{DB.games.find(x=>x.id===gid).votes[mid]=v;saveDB();},
+  toggleExclude:(gid,mid)=>{const g=DB.games.find(x=>x.id===gid); const i=g.excluded.indexOf(mid);
+    if(i>=0)g.excluded.splice(i,1); else g.excluded.push(mid);saveDB();},
+  // 원데이 클래스
+  getOneday:()=>DB.oneday,
+  getOnedayInv:()=>DB.onedayInv,
+  getOnedayChecks:()=>DB.onedayChecks,
+  setOnedayInv:(key,qty)=>{DB.onedayInv[key]=qty;saveDB();},
+  updateGuest:(gid,patch)=>{Object.assign(DB.oneday.find(g=>g.gid===gid),patch);saveDB();},
+  addGuest:(g)=>{g.gid=Math.max(0,...DB.oneday.map(x=>x.gid))+1;DB.oneday.push(g);saveDB();},
+  removeGuest:(gid)=>{DB.oneday=DB.oneday.filter(g=>g.gid!==gid);delete DB.onedayChecks[gid];saveDB();},
+  setGuestCheck:(gid,k,v)=>{if(!DB.onedayChecks[gid])DB.onedayChecks[gid]={gear:false,skate:false};DB.onedayChecks[gid][k]=v;saveDB();},
+  resetGuestChecks:()=>{DB.onedayChecks={};saveDB();},
+};
+
+const LEVELS=["기초반","초급반","중급반","상급반"];
+const FEES=["X","월 4","월 8","통합"];
+const POSITIONS=["F","D","골리"];
+const POS_LABEL={"F":"플레이어F","D":"플레이어D","골리":"골리"};
+// 골리 단독 여부 (레벨 무관)
+function isGoalieOnly(m){ return m.pos && m.pos.length===1 && m.pos[0]==='골리'; }
+function posText(m){ return (m.pos&&m.pos.length)? m.pos.map(p=>POS_LABEL[p]).join(' · ') : '미지정'; }
+let role='admin';
+let selected=new Set();
+// 데모 기본 회원 = 지혜은
+let currentMember=(DB.members.find(m=>m.name==='지혜은')||DB.members[0]).id;
+
+function feeText(m){ if(m.fee==='X')return '없음'; return m.special?'통합 ⭐':m.fee; }
+function feeBadge(m){ if(m.fee==='X')return '<span class="badge pill-no">없음</span>';
+  return m.special?'<span class="badge pill-fee">통합 <span class="star">⭐</span></span>':`<span class="badge pill-fee">${m.fee}</span>`; }
+function jerseyBadge(m){ return m.no!=null?`<span class="num">${m.no}</span>`:'<span class="num none">미배정</span>'; }
+
+function setRole(r){
+  role=r;
+  document.getElementById('view-admin').style.display=r==='admin'?'':'none';
+  document.getElementById('view-member').style.display=r==='member'?'':'none';
+  document.getElementById('r-admin').classList.toggle('active',r==='admin');
+  document.getElementById('r-member').classList.toggle('active',r==='member');
+  document.getElementById('gearBtn').style.display=r==='admin'?'':'none';
+  document.getElementById('resetBtn').style.display=r==='admin'?'':'none';
+  if(r==='member'){ fillWho(); renderMember(); }
+}
+function adminTab(name,btn){
+  ['roster','games','oneday'].forEach(n=>document.getElementById('a-'+n).style.display='none');
+  document.getElementById('a-'+name).style.display='';
+  document.querySelectorAll('#view-admin .tabs button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  if(name==='oneday') renderOneday();
+}
+
+/* ===== 통합 명단 ===== */
+let sortState={field:null,dir:1}; // dir 1=asc -1=desc
+let filters={pos:null,level:null,fee:null,paidThis:null,paidNext:null,equip:null}; // null=전체, 아니면 Set
+
+function memberFeeKey(m){ return m.fee==='X'?'없음':(m.special?'통합 ⭐':m.fee); }
+function memberVal(m,field){
+  if(field==='level') return m.level||'미지정';
+  if(field==='fee') return memberFeeKey(m);
+  if(field==='paidThis'||field==='paidNext') return m[field]?'납부':'미납';
+  if(field==='equip') return m.equip?'대여':'없음';
+}
+function getRows(){
+  let rows=dataService.getMembers().slice();
+  // 필터 (AND, 각 컬럼 내부는 OR/중복허용)
+  Object.keys(filters).forEach(f=>{
+    if(!filters[f]) return;
+    if(f==='pos'){
+      rows=rows.filter(m=>{
+        const labels=(m.pos&&m.pos.length)?m.pos.map(p=>POS_LABEL[p]):['미지정'];
+        return labels.some(l=>filters.pos.has(l));
+      });
+    } else {
+      rows=rows.filter(m=>filters[f].has(memberVal(m,f)));
+    }
+  });
+  // 정렬
+  if(sortState.field==='name'){
+    rows.sort((a,b)=>a.name.localeCompare(b.name,'ko')*sortState.dir);
+  } else if(sortState.field==='no'){
+    rows.sort((a,b)=>{
+      const av=a.no==null?Infinity:a.no, bv=b.no==null?Infinity:b.no; // 미배정은 항상 뒤
+      if(av===bv) return 0;
+      return (av<bv?-1:1)*sortState.dir;
+    });
+  }
+  return rows;
+}
+function payToggle(m,field){
+  const on=m[field];
+  return `<span class="pay-toggle">
+    <button class="${on?'on':''}" onclick="setPay(${m.id},'${field}',true)">O</button>
+    <button class="${!on?'':''}" onclick="setPay(${m.id},'${field}',false)" ${!on?'style="background:#f1f4f7;color:#90a1b0"':''}>X</button>
+  </span>`;
+}
+function renderRoster(){
+  const tb=document.getElementById('tb-roster'); tb.innerHTML='';
+  const rows=getRows();
+  if(rows.length===0){ tb.innerHTML='<tr><td colspan="9" class="hint" style="text-align:center;padding:24px">조건에 맞는 회원이 없습니다.</td></tr>'; }
+  rows.forEach(m=>{
+    const lvOpts=['<option value="">미지정</option>'].concat(LEVELS.map(l=>`<option ${l===m.level?'selected':''}>${l}</option>`)).join('');
+    const feeOpts=FEES.map(f=>`<option value="${f}" ${f===m.fee&&!m.special?'selected':''}>${f==='X'?'없음':f}</option>`).join('')+(m.special?'<option selected>통합 ⭐</option>':'');
+    const goalieOnly=isGoalieOnly(m);
+    const posCell=`<button class="poschip" onclick="openPosPicker(${m.id},this,event)">${posText(m)} ▾</button>`;
+    const lvCell = goalieOnly
+      ? '<span class="lvdash" title="골리 단독은 레벨 구분이 없습니다">–</span>'
+      : `<select class="badge lv-${m.level}" style="border:0;padding:4px 6px" onchange="updMember(${m.id},'level',this.value)">${lvOpts}</select>`;
+    tb.innerHTML+=`<tr>
+      <td><input type="checkbox" class="chk rowchk" data-id="${m.id}" ${selected.has(m.id)?'checked':''} onclick="toggleRow(${m.id},this)"></td>
+      <td><input type="number" class="jno-input ${m.no!=null?'':'empty'}" value="${m.no!=null?m.no:''}" placeholder="—" min="1" max="100" onchange="setJersey(${m.id},this.value)"></td>
+      <td><b>${m.name}</b></td>
+      <td>${posCell}</td>
+      <td>${lvCell}</td>
+      <td><select style="padding:4px 6px" onchange="updFee(${m.id},this.value)">${feeOpts}</select></td>
+      <td>${payToggle(m,'paidThis')}</td>
+      <td>${payToggle(m,'paidNext')}</td>
+      <td><input type="checkbox" class="chk" ${m.equip?'checked':''} onclick="updMember(${m.id},'equip',this.checked)"></td>
+    </tr>`;
+  });
+  renderStats(); renderActiveFilters(); syncSortBtns();
+}
+/* 정렬 */
+function toggleSort(field){
+  if(sortState.field!==field){ sortState={field,dir:1}; }      // 1클릭: 오름차순
+  else if(sortState.dir===1){ sortState.dir=-1; }              // 2클릭: 내림차순
+  else { sortState={field:null,dir:1}; }                        // 3클릭: 해제
+  renderRoster();
+}
+function syncSortBtns(){
+  ['no','name'].forEach(f=>{
+    const b=document.getElementById('sort-'+f); if(!b)return;
+    b.classList.remove('asc','desc'); b.textContent='▲▼';
+    if(sortState.field===f){ b.classList.add(sortState.dir===1?'asc':'desc'); b.textContent=sortState.dir===1?'▲':'▼'; }
+  });
+}
+/* 필터 */
+let filterTarget=null;
+function filterOptions(field){
+  if(field==='pos') return ['플레이어F','플레이어D','골리','미지정'];
+  if(field==='level') return ['기초반','초급반','중급반','상급반','미지정'];
+  if(field==='fee'){ const s=new Set(); dataService.getMembers().forEach(m=>s.add(memberFeeKey(m))); return [...s]; }
+  if(field==='paidThis'||field==='paidNext') return ['납부','미납'];
+  if(field==='equip') return ['대여','없음'];
+}
+function openFilter(field,btn,ev){
+  ev.stopPropagation();
+  const pop=document.getElementById('filter-pop');
+  if(pop.classList.contains('open') && filterTarget===field){ pop.classList.remove('open'); filterTarget=null; return; }
+  filterTarget=field;
+  document.getElementById('fp-title').textContent='('+ {pos:'포지션',level:'레벨',fee:'회비유형',paidThis:'이번달',paidNext:'다음달',equip:'장비'}[field] +')';
+  const cur=filters[field];
+  document.getElementById('fp-list').innerHTML=filterOptions(field).map(o=>
+    `<label><input type="checkbox" class="chk" value="${o}" ${(!cur||cur.has(o))?'checked':''}> ${o}</label>`).join('');
+  const r=btn.getBoundingClientRect();
+  pop.style.top=(r.bottom+6)+'px';
+  pop.style.left=(Math.min(r.left, window.innerWidth-180))+'px';
+  pop.classList.add('open');
+}
+function applyFilter(){
+  const checked=[...document.querySelectorAll('#fp-list input:checked')].map(i=>i.value);
+  const all=filterOptions(filterTarget);
+  filters[filterTarget] = (checked.length===0||checked.length===all.length) ? null : new Set(checked);
+  document.getElementById('filter-pop').classList.remove('open');
+  renderRoster();
+}
+function clearFilter(){ filters[filterTarget]=null; document.getElementById('filter-pop').classList.remove('open'); renderRoster(); }
+function renderActiveFilters(){
+  const box=document.getElementById('active-filters'); box.innerHTML='';
+  const names={pos:'포지션',level:'레벨',fee:'회비',paidThis:'이번달',paidNext:'다음달',equip:'장비'};
+  Object.keys(filters).forEach(f=>{
+    const btn=document.getElementById('filt-'+f); if(btn) btn.classList.toggle('active',!!filters[f]);
+    if(filters[f]) box.innerHTML+=`<span class="fchip">${names[f]}: ${[...filters[f]].join(', ')}<button onclick="removeFilter('${f}')">×</button></span>`;
+  });
+}
+function removeFilter(f){ filters[f]=null; renderRoster(); }
+document.addEventListener('click',e=>{
+  const pop=document.getElementById('filter-pop');
+  if(pop && pop.classList.contains('open') && !pop.contains(e.target) && !e.target.classList.contains('filtbtn'))
+    pop.classList.remove('open');
+  const pp=document.getElementById('pos-pop');
+  if(pp && pp.classList.contains('open') && !pp.contains(e.target) && !e.target.classList.contains('poschip')){
+    pp.classList.remove('open'); posTarget=null;
+  }
+});
+function setJersey(id,val){
+  const v=val===''?null:parseInt(val,10);
+  if(v!==null){
+    if(v<1||v>100){ alert('등번호는 1~100 사이여야 합니다.'); renderRoster(); return; }
+    const dup=dataService.getMembers().find(m=>m.id!==id && m.no===v);
+    if(dup){ alert(`등번호 ${v}번은 이미 ${dup.name} 회원이 사용 중입니다.`); renderRoster(); return; }
+  }
+  dataService.updateMember(id,{no:v}); renderRoster();
+}
+function updMember(id,f,v){ dataService.updateMember(id,{[f]:v}); renderRoster(); }
+/* 포지션 선택 */
+let posTarget=null;
+function openPosPicker(id,btn,ev){
+  ev.stopPropagation();
+  const pop=document.getElementById('pos-pop');
+  if(pop.classList.contains('open') && posTarget===id){ pop.classList.remove('open'); posTarget=null; return; }
+  posTarget=id;
+  const m=dataService.getMember(id);
+  document.getElementById('pp-list').innerHTML=POSITIONS.map(p=>
+    `<label><input type="checkbox" class="chk" value="${p}" ${m.pos.includes(p)?'checked':''}> ${POS_LABEL[p]}</label>`).join('');
+  const r=btn.getBoundingClientRect();
+  pop.style.top=(r.bottom+6)+'px';
+  pop.style.left=(Math.min(r.left, window.innerWidth-180))+'px';
+  pop.classList.add('open');
+}
+function applyPos(){
+  const m=dataService.getMember(posTarget);
+  const chosen=[...document.querySelectorAll('#pp-list input:checked')].map(i=>i.value);
+  const patch={pos:chosen};
+  if(chosen.length===1 && chosen[0]==='골리') patch.level=''; // 골리 단독 → 레벨 제거
+  dataService.updateMember(posTarget,patch);
+  document.getElementById('pos-pop').classList.remove('open'); posTarget=null;
+  renderRoster();
+}
+function updFee(id,v){ const m=dataService.getMember(id);
+  if(v==='통합 ⭐'){ return; } // 특이건 유지
+  dataService.updateMember(id,{fee:v,feeRaw:v,special:false}); renderRoster(); }
+function setPay(id,f,v){ dataService.updateMember(id,{[f]:v}); renderRoster(); }
+function renderStats(){
+  const ms=dataService.getMembers();
+  document.getElementById('s-total').textContent=ms.length;
+  document.getElementById('s-jersey').textContent=ms.filter(m=>m.no!=null).length;
+  document.getElementById('s-nojersey').textContent=ms.filter(m=>m.no==null).length;
+  document.getElementById('s-thismonth').textContent=ms.filter(m=>m.paidThis).length;
+}
+
+/* ===== 일괄 선택/적용 ===== */
+function toggleRow(id,el){ el.checked?selected.add(id):selected.delete(id); syncBulk(); }
+function toggleAll(el){ selected.clear(); if(el.checked) dataService.getMembers().forEach(m=>selected.add(m.id));
+  document.querySelectorAll('.rowchk').forEach(c=>c.checked=el.checked); syncBulk(); }
+function clearSel(){ selected.clear(); document.getElementById('chk-all').checked=false;
+  document.querySelectorAll('.rowchk').forEach(c=>c.checked=false); syncBulk(); }
+function syncBulk(){
+  const bar=document.getElementById('bulkbar');
+  document.getElementById('bulk-cnt').textContent=selected.size;
+  bar.classList.toggle('hidden',selected.size===0);
+  bulkFieldChange();
+}
+function bulkFieldChange(){
+  const f=document.getElementById('bulk-field').value;
+  const sel=document.getElementById('bulk-value');
+  let opts=[];
+  if(f==='pos') opts=POSITIONS.map(p=>[p,POS_LABEL[p]]).concat([['','미지정']]);
+  else if(f==='level') opts=LEVELS.map(l=>[l,l]).concat([['','미지정']]);
+  else if(f==='fee') opts=FEES.map(x=>[x,x==='X'?'없음':x]);
+  else if(f==='equip') opts=[['true','대여 O'],['false','대여 X']];
+  else opts=[['true','납부 O'],['false','미납 X']];
+  sel.innerHTML=opts.map(([v,t])=>`<option value="${v}">${t}</option>`).join('');
+}
+function applyBulk(){
+  if(selected.size===0)return;
+  const f=document.getElementById('bulk-field').value;
+  let v=document.getElementById('bulk-value').value;
+  if(f==='equip'||f==='paidThis'||f==='paidNext') v=(v==='true');
+  selected.forEach(id=>{
+    if(f==='fee') dataService.updateMember(id,{fee:v,feeRaw:v,special:false});
+    else if(f==='pos'){
+      const patch={pos:v?[v]:[]};
+      if(v==='골리') patch.level=''; // 골리 단독 → 레벨 제거
+      dataService.updateMember(id,patch);
+    }
+    else dataService.updateMember(id,{[f]:v});
+  });
+  renderRoster();
+}
+
+/* ===== 등번호 배치도 ===== */
+function openJersey(){ window._jpick=null; renderJgrid(); document.getElementById('jerseyOv').classList.add('open'); }
+function closeJersey(){ window._jpick=null; document.getElementById('jerseyOv').classList.remove('open'); }
+function renderJgrid(){
+  const byNo={}; dataService.getMembers().forEach(m=>{ if(m.no!=null) byNo[m.no]=m; });
+  const free=dataService.getMembers().filter(x=>x.no==null);
+  const g=document.getElementById('jgrid'); g.innerHTML='';
+  for(let n=1;n<=100;n++){
+    const m=byNo[n];
+    if(window._jpick===n && !m){
+      // 이 칸에 인라인 회원 선택 패널 노출
+      const opts=free.map(x=>`<option value="${x.id}">${x.name}</option>`).join('');
+      g.innerHTML+=`<div class="jcell picking" onclick="event.stopPropagation()">
+        <span class="jn">${n}</span>
+        <select class="jpick-sel" id="jpick-sel" onclick="event.stopPropagation()">${opts}</select>
+        <div class="jpick-btns">
+          <button onclick="event.stopPropagation();confirmPick(${n})">배정</button>
+          <button class="c" onclick="event.stopPropagation();cancelPick()">취소</button>
+        </div></div>`;
+    } else {
+      g.innerHTML+=`<div class="jcell ${m?'filled':''}" onclick="jcellClick(${n})" title="${m?'클릭하여 배정 해제':'클릭하여 회원 배정'}">
+        <span class="jn">${n}</span>${m?`<span class="jname">${m.name}</span>`:''}</div>`;
+    }
+  }
+}
+function jcellClick(n){
+  const m=dataService.getMembers().find(x=>x.no===n);
+  if(m){ dataService.updateMember(m.id,{no:null}); window._jpick=null; renderJgrid(); renderRoster(); return; }
+  const free=dataService.getMembers().filter(x=>x.no==null);
+  if(free.length===0){ alert('등번호 미배정 회원이 없습니다.'); return; }
+  window._jpick=n; renderJgrid();
+}
+function confirmPick(n){
+  const sel=document.getElementById('jpick-sel'); if(!sel)return;
+  const id=parseInt(sel.value,10);
+  dataService.updateMember(id,{no:n}); window._jpick=null; renderJgrid(); renderRoster();
+}
+function cancelPick(){ window._jpick=null; renderJgrid(); }
+
+/* ===== 경기 ===== */
+document.getElementById('ng-levels').addEventListener('click',e=>{const lb=e.target.closest('label');if(!lb)return;setTimeout(()=>lb.classList.toggle('on',lb.querySelector('input').checked),0);});
+function addGame(){
+  const title=ng_title.value.trim(),date=ng_date.value,time=ng_time.value,place=ng_place.value.trim();
+  const levels=[...document.querySelectorAll('#ng-levels input:checked')].map(i=>i.value);
+  if(!title||!date||levels.length===0){alert('제목, 날짜, 대상 레벨을 입력하세요.');return;}
+  dataService.addGame({league:'',title,date,time,place,levels,excluded:[]});
+  ng_title.value='';ng_place.value=''; renderAdminGames();
+}
+function eligibleMembers(g){ // 출전 대상 후보 (제외 반영 전): 레벨 대상자 + 골리 단독(레벨 무관)
+  return dataService.getMembers().filter(m=> isGoalieOnly(m) || (m.level && g.levels.includes(m.level)) );
+}
+let editingGame=null;
+function renderAdminGames(){
+  const box=document.getElementById('admin-games'); box.innerHTML='';
+  dataService.getGames().forEach(g=>{
+    if(editingGame===g.id){ box.innerHTML+=gameEditForm(g); return; }
+    const v=Object.values(g.votes),yes=v.filter(x=>x==='yes').length,no=v.filter(x=>x==='no').length;
+    const pool=eligibleMembers(g);
+    const roster=pool.map(m=>{
+      const ex=g.excluded.includes(m.id);
+      return `<label class="exlabel ${ex?'ex':''}"><input type="checkbox" ${ex?'checked':''} onclick="toggleExclude(${g.id},${m.id})"> ${m.name}${m.no!=null?' #'+m.no:''}</label>`;
+    }).join('');
+    const exCount=g.excluded.filter(id=>pool.some(m=>m.id===id)).length;
+    box.innerHTML+=`<div class="game-card ${g.published?'':'unpub'}">
+      <div class="row" style="justify-content:space-between;align-items:flex-start">
+        <div><div class="gt">${g.league?`<span class="league lg-${g.league}">${g.league}</span>`:''}${g.title}
+          ${g.published?'<span class="badge pub-on">공개 중</span>':'<span class="badge pub-off">비공개</span>'}</div>
+          <div class="gm">${g.date} ${g.time||''} · ${g.place||'장소 미정'}</div>
+          <div style="margin-top:8px">${g.levels.map(l=>`<span class="badge lv-${l}">${l}</span>`).join(' ')}</div></div>
+        <div style="text-align:right"><span class="badge pill-ok">참여 ${yes}</span><div style="margin-top:4px"><span class="badge pill-no">불참 ${no}</span></div></div>
+      </div>
+      <div class="exbox">
+        <div class="hint" style="font-weight:700;margin-bottom:6px">출전 가능 회원 (레벨 대상 ${pool.length}명 중 ${exCount}명 제외)</div>
+        <div class="exgrid">${roster||'<span class="hint">대상 레벨 회원이 없습니다. 명단에서 레벨을 먼저 부여하세요.</span>'}</div>
+        <div class="hint" style="margin-top:6px">체크 = 이번 경기 제외 (레벨은 맞지만 출전 빼기). 회원이 투표하기 전에 미리 설정하세요.</div>
+      </div>
+      <div class="gamebar">
+        <label class="pubtoggle">
+          <input type="checkbox" ${g.published?'checked':''} onclick="dataService.togglePublish(${g.id});renderAdminGames();renderMemberGames&&renderMemberGames()">
+          <span class="track"></span> 회원에게 보이기 (투표 열기)
+        </label>
+        <span style="flex:1"></span>
+        <button class="btn sm ghost" onclick="startEditGame(${g.id})">편집</button>
+        <button class="btn x" onclick="delGame(${g.id})">삭제 ✕</button>
+      </div>
+    </div>`;
+  });
+}
+function gameEditForm(g){
+  const lvls=['기초반','초급반','중급반','상급반'].map(l=>
+    `<label class="${g.levels.includes(l)?'on':''}"><input type="checkbox" value="${l}" ${g.levels.includes(l)?'checked':''}>${l}</label>`).join('');
+  return `<div class="game-card editing">
+    <div class="hint" style="font-weight:800;margin-bottom:8px">경기 편집</div>
+    <div class="row" style="margin-bottom:8px">
+      <input id="eg-title" value="${g.title.replace(/"/g,'&quot;')}" placeholder="제목" style="flex:1;min-width:160px">
+      <input id="eg-date" type="date" value="${g.date}">
+      <input id="eg-time" type="time" value="${g.time||''}">
+    </div>
+    <div class="row" style="margin-bottom:8px"><input id="eg-place" value="${(g.place||'').replace(/"/g,'&quot;')}" placeholder="장소" style="flex:1;min-width:160px"></div>
+    <div><span class="hint">대상 레벨</span><div class="lvset" id="eg-levels" onclick="setTimeout(()=>{[...this.querySelectorAll('label')].forEach(lb=>lb.classList.toggle('on',lb.querySelector('input').checked))},0)">${lvls}</div></div>
+    <div class="gamebar"><button class="btn sm" onclick="saveEditGame(${g.id})">저장</button>
+      <button class="btn sm ghost" onclick="editingGame=null;renderAdminGames()">취소</button></div>
+  </div>`;
+}
+function startEditGame(gid){ editingGame=gid; renderAdminGames(); }
+function saveEditGame(gid){
+  const title=document.getElementById('eg-title').value.trim();
+  const date=document.getElementById('eg-date').value;
+  const time=document.getElementById('eg-time').value;
+  const place=document.getElementById('eg-place').value.trim();
+  const levels=[...document.querySelectorAll('#eg-levels input:checked')].map(i=>i.value);
+  if(!title||!date||levels.length===0){alert('제목, 날짜, 대상 레벨을 입력하세요.');return;}
+  // 대상 레벨 축소 시, 더이상 대상 아닌 제외목록 정리
+  const g=dataService.getGames().find(x=>x.id===gid);
+  const pruned=g.excluded.filter(id=>{const m=dataService.getMember(id);return m&&(isGoalieOnly(m)||levels.includes(m.level));});
+  dataService.updateGame(gid,{title,date,time,place,levels,excluded:pruned});
+  editingGame=null; renderAdminGames(); if(typeof renderMemberGames==='function') renderMemberGames();
+}
+function delGame(gid){ const g=dataService.getGames().find(x=>x.id===gid);
+  if(confirm(`'${g.title}' 경기를 삭제할까요?`)){ dataService.removeGame(gid); editingGame=null; renderAdminGames(); } }
+function toggleExclude(gid,mid){ dataService.toggleExclude(gid,mid); renderAdminGames(); }
+
+/* ===== 회원 화면 ===== */
+function fillWho(){
+  const sel=document.getElementById('who'); const keep=currentMember; sel.innerHTML='';
+  dataService.getMembers().forEach(m=>sel.innerHTML+=`<option value="${m.id}">${m.name}${m.no!=null?' #'+m.no:''} (${m.level||'레벨 미지정'})</option>`);
+  if(dataService.getMember(keep)) sel.value=keep; else currentMember=dataService.getMembers()[0].id;
+}
+function renderMember(){
+  currentMember=+document.getElementById('who').value;
+  const m=dataService.getMember(currentMember);
+  document.getElementById('m-name').textContent=`${m.name}${m.no!=null?'  #'+m.no:'  (등번호 미배정)'}`;
+  document.getElementById('m-meta').textContent=`내 레벨 · ${m.level||'미지정'}`;
+  document.getElementById('m-product').textContent=feeText(m);
+  document.getElementById('m-paid').textContent=m.paidThis?'완료':'미납';
+  document.getElementById('m-equip').textContent=m.equip?'대여 중':'없음';
+  const pn=document.getElementById('m-paynotice');
+  if(m.fee!=='X' && !m.paidThis){
+    pn.innerHTML=`<div class="notice" style="background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.25);color:#eaf4ff">💳 이번 달 회비가 아직 미납입니다. 확인 부탁드려요. <span class="hint" style="color:#bcd6ee">(실서비스에선 이 시점에 푸시 알림)</span></div>`;
+  } else if(m.fee!=='X'){
+    pn.innerHTML=`<div class="notice" style="background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.25);color:#eaf4ff">✅ 이번 달 회비 납부 완료. 다음 달 결제 시점에 미리 알림을 보내드려요.</div>`;
+  } else pn.innerHTML='';
+  renderMemberGames();
+}
+function renderMemberGames(){
+  const m=dataService.getMember(currentMember);
+  const box=document.getElementById('member-games'); box.innerHTML='';
+  const games=dataService.getGames().filter(g=>g.published);
+  if(games.length===0){ box.innerHTML='<div class="hint">예정된 경기가 아직 없습니다.</div>'; return; }
+  games.forEach(g=>{
+    const eligible = (isGoalieOnly(m) || (m.level && g.levels.includes(m.level))) && !g.excluded.includes(m.id);
+    const my=g.votes[m.id]; let foot;
+    if(eligible){
+      foot=`<div class="vote-bar">
+        <button class="btn sm ${my==='yes'?'':'ghost'}" onclick="vote(${g.id},'yes')">참여할게요</button>
+        <button class="btn sm ${my==='no'?'danger':'ghost'}" onclick="vote(${g.id},'no')">불참</button>
+        ${my?`<span class="hint" style="align-self:center">내 응답: ${my==='yes'?'참여':'불참'}</span>`:''}</div>`;
+    } else {
+      foot=`<div class="notice">참여가 어려운 경기입니다. 응원 와주시면 정말 큰 힘이 됩니다! 📣</div>`;
+    }
+    box.innerHTML+=`<div class="game-card">
+      <div class="gt">${g.league?`<span class="league lg-${g.league}">${g.league}</span>`:''}${g.title}</div>
+      <div class="gm">${g.date} ${g.time||''} · ${g.place||'장소 미정'}</div>${foot}</div>`;
+  });
+}
+function vote(gid,v){ dataService.castVote(gid,currentMember,v); renderMemberGames(); renderAdminGames(); }
+
+/* ===== 추가/삭제 모달 ===== */
+function openManage(){ renderManage(); document.getElementById('manageOv').classList.add('open'); }
+function closeManage(){ document.getElementById('manageOv').classList.remove('open'); }
+function renderManage(){
+  const tb=document.getElementById('tb-manage'); tb.innerHTML='';
+  dataService.getMembers().forEach(m=>{
+    tb.innerHTML+=`<tr><td><b>${m.name}</b></td><td>${m.no!=null?m.no:'<span class="hint">미배정</span>'}</td>
+      <td>${feeText(m)}</td><td>${m.equip?'O':'<span class="hint">—</span>'}</td>
+      <td style="text-align:right"><button class="btn x" onclick="delMember(${m.id})">삭제 ✕</button></td></tr>`;
+  });
+}
+function addMember(){
+  const name=add_name.value.trim(); if(!name){alert('이름을 입력하세요.');return;}
+  const noV=add_no.value;
+  dataService.addMember({name,no:noV?+noV:null,fee:add_fee.value,feeRaw:add_fee.value,special:false,equip:add_eq.checked,level:"",paidThis:false,paidNext:false});
+  add_name.value='';add_no.value='';add_eq.checked=false; refreshAll();
+}
+function delMember(id){ const m=dataService.getMember(id);
+  if(confirm(`${m.name} 회원을 삭제할까요? (데모: 새로고침하면 복원)`)){ dataService.removeMember(id); selected.delete(id); refreshAll(); } }
+function refreshAll(){ renderRoster(); renderManage(); fillWho(); syncBulk(); }
+
+[ ...document.querySelectorAll('.ov') ].forEach(ov=>ov.addEventListener('click',e=>{if(e.target===ov)ov.classList.remove('open');}));
+
+/* 데모용 샘플 레벨/포지션 시드 (실서비스에선 운영자가 직접 부여) */
+function seedDemo(){
+  const seed={ "지혜은":"기초반", "강소현":"상급반", "김세민":"중급반", "최준성":"상급반",
+    "박수민":"중급반", "허진희":"초급반", "홍창의":"초급반", "이태경":"중급반",
+    "장병주":"상급반", "김흥재":"상급반", "추현용":"초급반", "변종웅":"중급반" };
+  DB.members.forEach(m=>{ if(seed[m.name]) m.level=seed[m.name]; });
+  const posSeed={ "강소현":["F"], "김세민":["F","D"], "최준성":["D"], "박수민":["F"],
+    "허진희":["F"], "홍창의":["D"], "이태경":["F"], "장병주":["골리"], // 골리 단독 예시
+    "김흥재":["D"], "추현용":["F"], "변종웅":["골리","D"], "지혜은":["F"] };
+  DB.members.forEach(m=>{ if(posSeed[m.name]) m.pos=posSeed[m.name]; });
+  DB.members.forEach(m=>{ if(isGoalieOnly(m)) m.level=''; }); // 골리 단독은 레벨 제거
+}
+if(!_seeded){ seedDemo(); saveDB(); } // 첫 방문(저장본 없음)에만 시드 후 저장
+
+/* ===== 원데이 클래스 로직 (PRD/데모 이식) ===== */
+const OD_KIND_LABEL={"gear-M":"장비 M","gear-L":"장비 L","skate-3-4":"스케이트 3-4","skate-5":"스케이트 5","skate-6-7":"스케이트 6-7","skate-8":"스케이트 8"};
+function odSkateFor(mm){ mm=+mm||0; if(mm<=232)return"3-4"; if(mm<=256)return"6-7"; return"8"; }
+function odIsFlex(mm){ mm=+mm||0; return (mm>=233&&mm<=246)||(mm>=257&&mm<=259)||mm>=276; }
+function odReseq(){ // 키 큰 순 정렬 + 순번(파생, no는 표시용)
+  DB.oneday.sort((a,b)=>(b.h||0)-(a.h||0));
+}
+function renderOneday(){
+  odReseq();
+  const list=document.getElementById('od-list'); const checks=dataService.getOnedayChecks();
+  let html='';
+  DB.oneday.forEach((p,i)=>{
+    const no=i+1; const c=checks[p.gid]||{gear:false,skate:false}; const done=c.gear&&c.skate;
+    html+=`<div class="od-card ${done?'done':''}">
+      <div class="od-num">${no}</div>
+      <div><div class="od-nm">${p.name}</div><div class="od-meta">${p.h}cm · ${p.f}mm</div>
+        <div class="od-badges">
+          <span class="od-badge g-${p.gear}">장비 ${p.gear}</span>
+          <span class="od-badge sk">스케이트 ${p.skate}</span>
+          ${p.flex?'<span class="od-badge fx">융통성 배정</span>':''}
+        </div></div>
+      <div class="od-checks">
+        <label class="od-chk"><input type="checkbox" data-gid="${p.gid}" data-k="gear" ${c.gear?'checked':''}>장비 전달</label>
+        <label class="od-chk"><input type="checkbox" data-gid="${p.gid}" data-k="skate" ${c.skate?'checked':''}>신발 전달</label>
+      </div></div>`;
+  });
+  list.innerHTML=html;
+  odUpdateStats();
+}
+function odUpdateStats(){
+  const checks=dataService.getOnedayChecks(); const inv=dataService.getOnedayInv();
+  let total=DB.oneday.length, done=0, m=0, l=0;
+  DB.oneday.forEach(p=>{ const c=checks[p.gid]||{}; if(c.gear&&c.skate)done++; if(p.gear==='M')m++; else l++; });
+  document.getElementById('od-total').textContent=total;
+  document.getElementById('od-done').textContent=done;
+  document.getElementById('od-m').textContent=m;
+  document.getElementById('od-l').textContent=l;
+  document.getElementById('od-lblM').textContent='M 배정 / 보유 '+inv['gear-M'];
+  document.getElementById('od-lblL').textContent='L 배정 / 보유 '+inv['gear-L'];
+  // 초과 경고 (장비 + 스케이트별)
+  const skCount={}; DB.oneday.forEach(p=>skCount[p.skate]=(skCount[p.skate]||0)+1);
+  const over=[];
+  if(m>inv['gear-M']) over.push(`장비 M ${m}/${inv['gear-M']}`);
+  if(l>inv['gear-L']) over.push(`장비 L ${l}/${inv['gear-L']}`);
+  ['3-4','5','6-7','8'].forEach(s=>{ const need=skCount[s]||0, have=inv['skate-'+s]||0; if(need>have) over.push(`스케이트 ${s} ${need}/${have}`); });
+  document.getElementById('od-m').parentElement.classList.toggle('over', m>inv['gear-M']);
+  document.getElementById('od-l').parentElement.classList.toggle('over', l>inv['gear-L']);
+  const warn=document.getElementById('od-warn');
+  warn.innerHTML = over.length ? `<div class="od-warn">⚠ 재고 초과: ${over.join(' · ')} — 배정은 유지되니 현장에서 융통성 있게 조정하세요.</div>` : '';
+}
+// 체크박스 위임
+document.getElementById('od-list').addEventListener('change',e=>{
+  const t=e.target; if(t.type!=='checkbox')return;
+  const gid=+t.getAttribute('data-gid'), k=t.getAttribute('data-k');
+  dataService.setGuestCheck(gid,k,t.checked);
+  const checks=dataService.getOnedayChecks();
+  const card=t.closest('.od-card');
+  if(card) card.classList.toggle('done', checks[gid].gear&&checks[gid].skate);
+  odUpdateStats();
+});
+function resetOnedayChecks(){ if(confirm('전달 체크를 모두 초기화할까요? (명단·재고는 유지)')){ dataService.resetGuestChecks(); renderOneday(); } }
+
+/* 원데이 설정 패널 */
+function openOnedaySettings(){ odRenderInv(); odRenderMem(); document.getElementById('od-panel').classList.add('show'); document.getElementById('od-overlay').classList.add('show'); }
+function closeOnedaySettings(){ document.getElementById('od-panel').classList.remove('show'); document.getElementById('od-overlay').classList.remove('show'); }
+document.getElementById('od-overlay').addEventListener('click',closeOnedaySettings);
+function odRenderInv(){
+  const inv=dataService.getOnedayInv(); let html='';
+  Object.keys(inv).forEach(kind=>{
+    html+=`<div class="od-invrow"><span class="k">${OD_KIND_LABEL[kind]}</span>
+      <input inputmode="numeric" value="${inv[kind]}" onchange="dataService.setOnedayInv('${kind}',parseInt(this.value,10)||0);odUpdateStats()"></div>`;
+  });
+  document.getElementById('od-invEdit').innerHTML=html;
+}
+function odRenderMem(){
+  let html=''; odReseq();
+  DB.oneday.forEach(p=>{
+    html+=`<div class="od-memrow">
+      <div><span class="od-memlbl">이름</span><input value="${p.name.replace(/"/g,'&quot;')}" onchange="odUpdGuest(${p.gid},'name',this.value)"></div>
+      <div><span class="od-memlbl">키</span><input inputmode="numeric" value="${p.h}" onchange="odUpdGuest(${p.gid},'h',this.value)"></div>
+      <div><span class="od-memlbl">발</span><input inputmode="numeric" value="${p.f}" onchange="odUpdGuest(${p.gid},'f',this.value)"></div>
+      <button class="del" onclick="odDelGuest(${p.gid})">✕</button>
+      <div class="l2">
+        <div><span class="od-memlbl">장비</span><select onchange="odUpdGuest(${p.gid},'gear',this.value)">
+          <option ${p.gear==='L'?'selected':''}>L</option><option ${p.gear==='M'?'selected':''}>M</option></select></div>
+        <div><span class="od-memlbl">스케이트</span><select onchange="odUpdGuest(${p.gid},'skate',this.value)">
+          ${["3-4","5","6-7","8"].map(s=>`<option ${p.skate===s?'selected':''}>${s}</option>`).join('')}</select></div>
+      </div></div>`;
+  });
+  document.getElementById('od-memEdit').innerHTML=html;
+}
+function odUpdGuest(gid,f,v){
+  if(f==='h'){ dataService.updateGuest(gid,{h:parseFloat(v)||0}); odRenderMem(); }
+  else if(f==='f'){ const mm=parseFloat(v)||0; dataService.updateGuest(gid,{f:mm,skate:odSkateFor(mm),flex:odIsFlex(mm)}); odRenderMem(); }
+  else dataService.updateGuest(gid,{[f]:v});
+  renderOneday();
+}
+function odDelGuest(gid){ const g=DB.oneday.find(x=>x.gid===gid);
+  if(confirm(`${g.name} 님을 명단에서 삭제할까요?`)){ dataService.removeGuest(gid); odRenderMem(); renderOneday(); } }
+function addOnedayMember(){ dataService.addGuest({name:"신규 게스트",h:170,f:250,gear:"L",skate:odSkateFor(250),flex:odIsFlex(250)}); odRenderMem(); renderOneday(); }
+
+/* init */
+renderRoster(); renderAdminGames(); fillWho(); bulkFieldChange();
+
+</script>
+</body>
+</html>
