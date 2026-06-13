@@ -100,7 +100,13 @@
   .stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:16px}
   .stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:15px}
   .stat.clickable{cursor:pointer;transition:.15s}.stat.clickable:hover{border-color:var(--blue);box-shadow:0 3px 12px rgba(29,111,184,.15)}
-  .stat .v{font-size:24px;font-weight:800;color:var(--blue-d)}.stat .l{font-size:11.5px;color:var(--muted);font-weight:600}
+  .stat .v{font-size:24px;font-weight:800;color:var(--blue-d);margin-top:3px}.stat .l{font-size:11.5px;color:var(--muted);font-weight:600}
+  .stat-pay .paybreak{display:flex;gap:16px;margin-top:7px}
+  .stat-pay .paybreak span{display:flex;flex-direction:column;line-height:1.05}
+  .stat-pay .paybreak b{font-size:22px;font-weight:800;color:var(--blue-d)}
+  .stat-pay .paybreak i{font-size:10.5px;color:var(--muted);font-style:normal;font-weight:600;margin-top:2px}
+  .stat-pay .paytotal{font-size:11px;color:var(--muted);margin-top:7px}
+  .stat-pay .paytotal b{color:var(--ink);font-weight:800}
   .stat .hintclick{font-size:10.5px;color:var(--blue);font-weight:700;margin-top:3px}
   .lvset{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 2px}
   .lvset label{display:flex;align-items:center;gap:4px;padding:5px 10px;border:1.5px solid var(--line);border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;user-select:none}
@@ -156,7 +162,25 @@
     font-weight:700;color:var(--rink);cursor:pointer;white-space:nowrap}
   .poschip:hover{border-color:var(--blue)}
   .lvdash{color:#b3c0cc;font-weight:800;font-size:15px}
+  #a-roster .tbl-scroll{overflow:visible}
+  #a-roster table{min-width:0}
   .pay-toggle{display:inline-flex;border:1.5px solid var(--line);border-radius:7px;overflow:hidden}
+  /* 회원 명단 제목행 고정 */
+  #a-roster thead th{position:sticky;top:0;z-index:20;background:#f0f5fa;box-shadow:inset 0 -1px 0 var(--line)}
+  /* 납부 3단 컨트롤 */
+  .pay3{display:inline-flex;border:1.5px solid var(--line);border-radius:7px;overflow:hidden}
+  .pay3 .seg{border:0;background:#fff;padding:4px 9px;font-size:11px;font-weight:800;cursor:pointer;color:#b3c0cc;border-right:1px solid var(--line);min-width:30px}
+  .pay3 .seg:last-child{border-right:0}
+  .pay3 .seg.on{background:var(--blue);color:#fff}
+  .pay3 .seg.on.ok{background:#8FC1E8;color:#0B1F33}
+  .pay3 .seg.on.no{background:#F3B6B0;color:#7a1f17}
+  .pay3 .seg.on.rest{background:#D4DCE4;color:#5b7184}
+  .pay3.locked .seg{cursor:default;padding:4px 12px}
+  /* 이름 검색 */
+  .searchbtn{border:0;background:#eef3f7;font-size:11px;padding:2px 6px;border-radius:5px;cursor:pointer;vertical-align:middle}
+  .searchbtn:hover{background:var(--sky)}
+  .name-search{margin-left:4px;padding:4px 8px;font-size:12px;border:1.5px solid var(--blue);border-radius:7px;width:110px;vertical-align:middle}
+  .name-search.hidden{display:none}
   .pay-toggle button{border:0;background:#fff;padding:4px 9px;font-size:11px;font-weight:700;cursor:pointer;color:#90a1b0}
   .pay-toggle button.on{background:var(--green);color:#fff}
   /* 일괄 액션바 */
@@ -226,14 +250,13 @@
     #a-roster tbody td:nth-child(2){grid-column:1;justify-self:start}
     #a-roster tbody td:nth-child(3){grid-column:2;justify-self:start;font-size:16px}
     #a-roster .jno-input{width:54px}
-    /* 라벨 부착 (포지션·레벨·회비·이번달·다음달·장비) */
+    /* 라벨 부착 (포지션·레벨·회비·납부·장비) */
     #a-roster tbody td:nth-child(n+4){grid-column:span 1}
     #a-roster tbody td:nth-child(4)::before{content:"포지션";}
     #a-roster tbody td:nth-child(5)::before{content:"레벨";}
     #a-roster tbody td:nth-child(6)::before{content:"회비유형";}
-    #a-roster tbody td:nth-child(7)::before{content:"이번달";}
-    #a-roster tbody td:nth-child(8)::before{content:"다음달";}
-    #a-roster tbody td:nth-child(9)::before{content:"장비";}
+    #a-roster tbody td:nth-child(7)::before{content:"납부";}
+    #a-roster tbody td:nth-child(8)::before{content:"장비";}
     #a-roster tbody td:nth-child(n+4)::before{display:block;font-size:10px;color:var(--muted);font-weight:700;margin-bottom:3px}
     #a-roster .poschip{width:100%;text-align:left}
     /* 설정 패널 모바일 풀폭 */
@@ -276,10 +299,18 @@
 
     <section id="a-roster">
       <div class="stat-grid">
-        <div class="stat"><div class="v" id="s-total">0</div><div class="l">전체 회원</div></div>
-        <div class="stat clickable" onclick="openJersey()"><div class="v" id="s-jersey">0</div><div class="l">등번호 배정</div><div class="hintclick">눌러서 배치도 보기 ▦</div></div>
-        <div class="stat"><div class="v" id="s-nojersey">0</div><div class="l">등번호 미배정</div></div>
-        <div class="stat"><div class="v" id="s-thismonth">0</div><div class="l">이번 달 납부</div></div>
+        <div class="stat"><div class="l">전체 회원</div><div class="v" id="s-total">0</div></div>
+        <div class="stat clickable" onclick="openJersey()"><div class="l">등번호 배정</div><div class="v" id="s-jersey">0</div><div class="hintclick">눌러서 배치도 보기 ▦</div></div>
+        <div class="stat"><div class="l">장비 대여 중</div><div class="v" id="s-equip">0</div></div>
+        <div class="stat stat-pay">
+          <div class="l">이번 달 납부 현황</div>
+          <div class="paybreak">
+            <span><b id="s-pay-ok">0</b><i>납부</i></span>
+            <span><b id="s-pay-no">0</b><i>미납</i></span>
+            <span><b id="s-pay-rest">0</b><i>휴식</i></span>
+          </div>
+          <div class="paytotal">총 <b id="s-pay-total">0</b>명</div>
+        </div>
       </div>
       <div class="card">
         <h2>회원 통합 명단</h2>
@@ -289,12 +320,12 @@
           <thead><tr>
             <th><input type="checkbox" class="chk" id="chk-all" onclick="toggleAll(this)"></th>
             <th>등번호 <button class="sortbtn" onclick="toggleSort('no')" id="sort-no" title="정렬">▲▼</button></th>
-            <th>이름 <button class="sortbtn" onclick="toggleSort('name')" id="sort-name" title="정렬">▲▼</button></th>
+            <th>이름 <button class="searchbtn" onclick="toggleNameSearch(event)" id="name-search-btn" title="이름 검색">🔍</button>
+              <input type="text" id="name-search" class="name-search hidden" placeholder="이름 검색" oninput="renderRoster()" onclick="event.stopPropagation()"></th>
             <th>포지션 <button class="filtbtn" onclick="openFilter('pos',this,event)" id="filt-pos" title="필터">▾</button></th>
             <th>레벨 <button class="filtbtn" onclick="openFilter('level',this,event)" id="filt-level" title="필터">▾</button></th>
             <th>회비유형 <button class="filtbtn" onclick="openFilter('fee',this,event)" id="filt-fee" title="필터">▾</button></th>
-            <th>이번달 <button class="filtbtn" onclick="openFilter('paidThis',this,event)" id="filt-paidThis" title="필터">▾</button></th>
-            <th>다음달 <button class="filtbtn" onclick="openFilter('paidNext',this,event)" id="filt-paidNext" title="필터">▾</button></th>
+            <th>납부 <button class="filtbtn" onclick="openFilter('payStatus',this,event)" id="filt-payStatus" title="필터">▾</button></th>
             <th>장비 <button class="filtbtn" onclick="openFilter('equip',this,event)" id="filt-equip" title="필터">▾</button></th>
           </tr></thead>
           <tbody id="tb-roster"></tbody>
@@ -307,8 +338,7 @@
             <option value="level">레벨</option>
             <option value="fee">회비유형</option>
             <option value="equip">장비대여</option>
-            <option value="paidThis">이번달 납부</option>
-            <option value="paidNext">다음달 납부</option>
+            <option value="payStatus">납부 상태</option>
           </select>
           <select id="bulk-value"></select>
           <button class="btn sm" onclick="applyBulk()">선택 회원에 일괄 적용</button>
@@ -329,7 +359,7 @@
 
     <!-- 포지션 선택 팝업 (겸직 중복선택) -->
     <div id="pos-pop" class="filter-pop">
-      <div class="fp-head">포지션 (겸직 가능)</div>
+      <div class="fp-head">포지션 선택</div>
       <div class="fp-list" id="pp-list"></div>
       <div class="fp-btns"><button class="btn sm" onclick="applyPos()">적용</button></div>
     </div>
@@ -433,7 +463,7 @@
         <div class="row">
           <input id="add-name" placeholder="이름" style="width:110px">
           <input id="add-no" type="number" placeholder="등번호(선택)" style="width:120px">
-          <select id="add-fee"><option value="X">회비 없음</option><option value="월 4">월 4</option><option value="월 8">월 8</option><option value="통합">통합</option></select>
+          <select id="add-fee"><option value="X">없음</option><option value="월 4">제니스</option><option value="월 8">장한평</option><option value="통합">통합권</option><option value="휴식">휴식</option></select>
           <label class="hint"><input type="checkbox" id="add-eq"> 장비대여</label>
           <button class="btn sm" onclick="addMember()">추가</button>
         </div>
@@ -450,59 +480,59 @@
 /* ============ dataService (격리 계층, Supabase 교체지점) ============ */
 const INITIAL_DB = {
   members: [
-  {id:1, name:"강다연", no:null, fee:"X", feeRaw:"X", special:false, equip:false, pos:[], level:"", paidThis:false, paidNext:false},
-  {id:2, name:"강소현", no:21, fee:"통합", feeRaw:"통합", special:false, equip:false, pos:[], level:"", paidThis:false, paidNext:false},
-  {id:3, name:"강재우", no:92, fee:"X", feeRaw:"X", special:false, equip:true, pos:[], level:"", paidThis:false, paidNext:false},
-  {id:4, name:"곽수언", no:30, fee:"X", feeRaw:"X", special:false, equip:false, pos:[], level:"", paidThis:false, paidNext:false},
-  {id:5, name:"권기석", no:24, fee:"X", feeRaw:"X", special:false, equip:false, pos:[], level:"", paidThis:false, paidNext:false},
-  {id:6, name:"길동규", no:4, fee:"X", feeRaw:"X", special:false, equip:true, pos:[], level:"", paidThis:false, paidNext:false},
-  {id:7, name:"김가연", no:20, fee:"X", feeRaw:"X", special:false, equip:false, pos:[], level:"", paidThis:false, paidNext:false},
-  {id:8, name:"김기준", no:95, fee:"X", feeRaw:"X", special:false, equip:false, pos:[], level:"", paidThis:false, paidNext:false},
-  {id:9, name:"김동현", no:56, fee:"X", feeRaw:"X", special:false, equip:false, pos:[], level:"", paidThis:false, paidNext:false},
-  {id:10, name:"김보라", no:51, fee:"X", feeRaw:"X", special:false, equip:true, pos:[], level:"", paidThis:false, paidNext:false},
-  {id:11, name:"김석현", no:10, fee:"통합", feeRaw:"통합", special:false, equip:false, pos:[], level:"", paidThis:false, paidNext:false},
-  {id:12, name:"김성태", no:11, fee:"X", feeRaw:"X", special:false, equip:false, pos:[], level:"", paidThis:false, paidNext:false},
-  {id:13, name:"김세민", no:36, fee:"월 4", feeRaw:"월 4", special:false, equip:false, pos:[], level:"", paidThis:false, paidNext:false},
-  {id:14, name:"김수현", no:6, fee:"X", feeRaw:"X", special:false, equip:false, pos:[], level:"", paidThis:false, paidNext:false},
-  {id:15, name:"김예은", no:null, fee:"X", feeRaw:"X", special:false, equip:false, pos:[], level:"", paidThis:false, paidNext:false},
-  {id:16, name:"김용찬", no:89, fee:"X", feeRaw:"X", special:false, equip:false, pos:[], level:"", paidThis:false, paidNext:false},
-  {id:17, name:"김주연", no:46, fee:"11", feeRaw:"11", special:true, equip:false, pos:[], level:"", paidThis:false, paidNext:false},
-  {id:18, name:"김준성", no:23, fee:"X", feeRaw:"X", special:false, equip:false, pos:[], level:"", paidThis:false, paidNext:false},
-  {id:19, name:"김흥재", no:29, fee:"월 8", feeRaw:"월 8", special:false, equip:false, pos:[], level:"", paidThis:false, paidNext:false},
-  {id:20, name:"류인균", no:null, fee:"X", feeRaw:"X", special:false, equip:false, pos:[], level:"", paidThis:false, paidNext:false},
-  {id:21, name:"매버릭", no:84, fee:"월 4", feeRaw:"월 4", special:false, equip:true, pos:[], level:"", paidThis:false, paidNext:false},
-  {id:22, name:"박수민", no:37, fee:"15", feeRaw:"15", special:true, equip:true, pos:[], level:"", paidThis:false, paidNext:false},
-  {id:23, name:"박시은", no:null, fee:"월 4", feeRaw:"월 4", special:false, equip:false, pos:[], level:"", paidThis:false, paidNext:false},
-  {id:24, name:"백승찬", no:1, fee:"X", feeRaw:"X", special:false, equip:false, pos:[], level:"", paidThis:false, paidNext:false},
-  {id:25, name:"변종웅", no:91, fee:"월 4", feeRaw:"월 4", special:false, equip:true, pos:[], level:"", paidThis:false, paidNext:false},
-  {id:26, name:"산드로", no:93, fee:"X", feeRaw:"X", special:false, equip:false, pos:[], level:"", paidThis:false, paidNext:false},
-  {id:27, name:"송현진", no:null, fee:"월 4", feeRaw:"월 4", special:false, equip:false, pos:[], level:"", paidThis:false, paidNext:false},
-  {id:28, name:"안지용", no:77, fee:"월 4", feeRaw:"월 4", special:false, equip:false, pos:[], level:"", paidThis:false, paidNext:false},
-  {id:29, name:"여성민", no:null, fee:"X", feeRaw:"X", special:false, equip:true, pos:[], level:"", paidThis:false, paidNext:false},
-  {id:30, name:"유광현", no:96, fee:"11", feeRaw:"11", special:true, equip:false, pos:[], level:"", paidThis:false, paidNext:false},
-  {id:31, name:"유예찬", no:34, fee:"X", feeRaw:"X", special:false, equip:false, pos:[], level:"", paidThis:false, paidNext:false},
-  {id:32, name:"유재동", no:17, fee:"X", feeRaw:"X", special:false, equip:false, pos:[], level:"", paidThis:false, paidNext:false},
-  {id:33, name:"이규민", no:null, fee:"X", feeRaw:"X", special:false, equip:false, pos:[], level:"", paidThis:false, paidNext:false},
-  {id:34, name:"이다연", no:null, fee:"월 4", feeRaw:"월 4", special:false, equip:false, pos:[], level:"", paidThis:false, paidNext:false},
-  {id:35, name:"이도윤", no:22, fee:"X", feeRaw:"X", special:false, equip:false, pos:[], level:"", paidThis:false, paidNext:false},
-  {id:36, name:"이병준", no:null, fee:"X", feeRaw:"X", special:false, equip:true, pos:[], level:"", paidThis:false, paidNext:false},
-  {id:37, name:"이태경", no:44, fee:"월 4", feeRaw:"월 4", special:false, equip:true, pos:[], level:"", paidThis:false, paidNext:false},
-  {id:38, name:"장병주", no:88, fee:"통합", feeRaw:"통합", special:false, equip:false, pos:[], level:"", paidThis:false, paidNext:false},
-  {id:39, name:"장재원", no:99, fee:"11", feeRaw:"11", special:true, equip:false, pos:[], level:"", paidThis:false, paidNext:false},
-  {id:40, name:"정선경", no:7, fee:"X", feeRaw:"X", special:false, equip:true, pos:[], level:"", paidThis:false, paidNext:false},
-  {id:41, name:"정정하", no:13, fee:"X", feeRaw:"X", special:false, equip:false, pos:[], level:"", paidThis:false, paidNext:false},
-  {id:42, name:"조성무", no:71, fee:"X", feeRaw:"X", special:false, equip:true, pos:[], level:"", paidThis:false, paidNext:false},
-  {id:43, name:"조우제", no:31, fee:"통합", feeRaw:"월,통합", special:false, equip:true, pos:[], level:"", paidThis:false, paidNext:false},
-  {id:44, name:"지병흔", no:null, fee:"X", feeRaw:"X", special:false, equip:false, pos:[], level:"", paidThis:false, paidNext:false},
-  {id:45, name:"지혜은", no:8, fee:"11", feeRaw:"11", special:true, equip:true, pos:[], level:"", paidThis:false, paidNext:false},
-  {id:46, name:"최정학", no:null, fee:"11", feeRaw:"11", special:true, equip:true, pos:[], level:"", paidThis:false, paidNext:false},
-  {id:47, name:"최준성", no:5, fee:"월 8", feeRaw:"월 8", special:false, equip:false, pos:[], level:"", paidThis:false, paidNext:false},
-  {id:48, name:"추현용", no:9, fee:"월 4", feeRaw:"월 4", special:false, equip:false, pos:[], level:"", paidThis:false, paidNext:false},
-  {id:49, name:"허다연", no:27, fee:"X", feeRaw:"X", special:false, equip:true, pos:[], level:"", paidThis:false, paidNext:false},
-  {id:50, name:"허진희", no:47, fee:"월 4", feeRaw:"월 4", special:false, equip:true, pos:[], level:"", paidThis:false, paidNext:false},
-  {id:51, name:"홍창의", no:14, fee:"월 4", feeRaw:"월 4", special:false, equip:true, pos:[], level:"", paidThis:false, paidNext:false},
-  {id:52, name:"홍혜련", no:null, fee:"X", feeRaw:"X", special:false, equip:false, pos:[], level:"", paidThis:false, paidNext:false},
-  {id:53, name:"황상하", no:null, fee:"월 8", feeRaw:"월 8", special:false, equip:false, pos:[], level:"", paidThis:false, paidNext:false}
+  {id:1, name:"강다연", no:null, fee:"X", feeRaw:"X", special:false, equip:false, pos:[], level:"", payStatus:"미납"},
+  {id:2, name:"강소현", no:21, fee:"통합", feeRaw:"통합", special:false, equip:false, pos:[], level:"", payStatus:"미납"},
+  {id:3, name:"강재우", no:92, fee:"X", feeRaw:"X", special:false, equip:true, pos:[], level:"", payStatus:"미납"},
+  {id:4, name:"곽수언", no:30, fee:"X", feeRaw:"X", special:false, equip:false, pos:[], level:"", payStatus:"미납"},
+  {id:5, name:"권기석", no:24, fee:"X", feeRaw:"X", special:false, equip:false, pos:[], level:"", payStatus:"미납"},
+  {id:6, name:"길동규", no:4, fee:"X", feeRaw:"X", special:false, equip:true, pos:[], level:"", payStatus:"미납"},
+  {id:7, name:"김가연", no:20, fee:"X", feeRaw:"X", special:false, equip:false, pos:[], level:"", payStatus:"미납"},
+  {id:8, name:"김기준", no:95, fee:"X", feeRaw:"X", special:false, equip:false, pos:[], level:"", payStatus:"미납"},
+  {id:9, name:"김동현", no:56, fee:"X", feeRaw:"X", special:false, equip:false, pos:[], level:"", payStatus:"미납"},
+  {id:10, name:"김보라", no:51, fee:"X", feeRaw:"X", special:false, equip:true, pos:[], level:"", payStatus:"미납"},
+  {id:11, name:"김석현", no:10, fee:"통합", feeRaw:"통합", special:false, equip:false, pos:[], level:"", payStatus:"미납"},
+  {id:12, name:"김성태", no:11, fee:"X", feeRaw:"X", special:false, equip:false, pos:[], level:"", payStatus:"미납"},
+  {id:13, name:"김세민", no:36, fee:"월 4", feeRaw:"월 4", special:false, equip:false, pos:[], level:"", payStatus:"미납"},
+  {id:14, name:"김수현", no:6, fee:"X", feeRaw:"X", special:false, equip:false, pos:[], level:"", payStatus:"미납"},
+  {id:15, name:"김예은", no:null, fee:"X", feeRaw:"X", special:false, equip:false, pos:[], level:"", payStatus:"미납"},
+  {id:16, name:"김용찬", no:89, fee:"X", feeRaw:"X", special:false, equip:false, pos:[], level:"", payStatus:"미납"},
+  {id:17, name:"김주연", no:46, fee:"11", feeRaw:"11", special:true, equip:false, pos:[], level:"", payStatus:"미납"},
+  {id:18, name:"김준성", no:23, fee:"X", feeRaw:"X", special:false, equip:false, pos:[], level:"", payStatus:"미납"},
+  {id:19, name:"김흥재", no:29, fee:"월 8", feeRaw:"월 8", special:false, equip:false, pos:[], level:"", payStatus:"미납"},
+  {id:20, name:"류인균", no:null, fee:"X", feeRaw:"X", special:false, equip:false, pos:[], level:"", payStatus:"미납"},
+  {id:21, name:"매버릭", no:84, fee:"월 4", feeRaw:"월 4", special:false, equip:true, pos:[], level:"", payStatus:"미납"},
+  {id:22, name:"박수민", no:37, fee:"15", feeRaw:"15", special:true, equip:true, pos:[], level:"", payStatus:"미납"},
+  {id:23, name:"박시은", no:null, fee:"월 4", feeRaw:"월 4", special:false, equip:false, pos:[], level:"", payStatus:"미납"},
+  {id:24, name:"백승찬", no:1, fee:"X", feeRaw:"X", special:false, equip:false, pos:[], level:"", payStatus:"미납"},
+  {id:25, name:"변종웅", no:91, fee:"월 4", feeRaw:"월 4", special:false, equip:true, pos:[], level:"", payStatus:"미납"},
+  {id:26, name:"산드로", no:93, fee:"X", feeRaw:"X", special:false, equip:false, pos:[], level:"", payStatus:"미납"},
+  {id:27, name:"송현진", no:null, fee:"월 4", feeRaw:"월 4", special:false, equip:false, pos:[], level:"", payStatus:"미납"},
+  {id:28, name:"안지용", no:77, fee:"월 4", feeRaw:"월 4", special:false, equip:false, pos:[], level:"", payStatus:"미납"},
+  {id:29, name:"여성민", no:null, fee:"X", feeRaw:"X", special:false, equip:true, pos:[], level:"", payStatus:"미납"},
+  {id:30, name:"유광현", no:96, fee:"11", feeRaw:"11", special:true, equip:false, pos:[], level:"", payStatus:"미납"},
+  {id:31, name:"유예찬", no:34, fee:"X", feeRaw:"X", special:false, equip:false, pos:[], level:"", payStatus:"미납"},
+  {id:32, name:"유재동", no:17, fee:"X", feeRaw:"X", special:false, equip:false, pos:[], level:"", payStatus:"미납"},
+  {id:33, name:"이규민", no:null, fee:"X", feeRaw:"X", special:false, equip:false, pos:[], level:"", payStatus:"미납"},
+  {id:34, name:"이다연", no:null, fee:"월 4", feeRaw:"월 4", special:false, equip:false, pos:[], level:"", payStatus:"미납"},
+  {id:35, name:"이도윤", no:22, fee:"X", feeRaw:"X", special:false, equip:false, pos:[], level:"", payStatus:"미납"},
+  {id:36, name:"이병준", no:null, fee:"X", feeRaw:"X", special:false, equip:true, pos:[], level:"", payStatus:"미납"},
+  {id:37, name:"이태경", no:44, fee:"월 4", feeRaw:"월 4", special:false, equip:true, pos:[], level:"", payStatus:"미납"},
+  {id:38, name:"장병주", no:88, fee:"통합", feeRaw:"통합", special:false, equip:false, pos:[], level:"", payStatus:"미납"},
+  {id:39, name:"장재원", no:99, fee:"11", feeRaw:"11", special:true, equip:false, pos:[], level:"", payStatus:"미납"},
+  {id:40, name:"정선경", no:7, fee:"X", feeRaw:"X", special:false, equip:true, pos:[], level:"", payStatus:"미납"},
+  {id:41, name:"정정하", no:13, fee:"X", feeRaw:"X", special:false, equip:false, pos:[], level:"", payStatus:"미납"},
+  {id:42, name:"조성무", no:71, fee:"X", feeRaw:"X", special:false, equip:true, pos:[], level:"", payStatus:"미납"},
+  {id:43, name:"조우제", no:31, fee:"통합", feeRaw:"월,통합", special:false, equip:true, pos:[], level:"", payStatus:"미납"},
+  {id:44, name:"지병흔", no:null, fee:"X", feeRaw:"X", special:false, equip:false, pos:[], level:"", payStatus:"미납"},
+  {id:45, name:"지혜은", no:8, fee:"11", feeRaw:"11", special:true, equip:true, pos:[], level:"", payStatus:"미납"},
+  {id:46, name:"최정학", no:null, fee:"11", feeRaw:"11", special:true, equip:true, pos:[], level:"", payStatus:"미납"},
+  {id:47, name:"최준성", no:5, fee:"월 8", feeRaw:"월 8", special:false, equip:false, pos:[], level:"", payStatus:"미납"},
+  {id:48, name:"추현용", no:9, fee:"월 4", feeRaw:"월 4", special:false, equip:false, pos:[], level:"", payStatus:"미납"},
+  {id:49, name:"허다연", no:27, fee:"X", feeRaw:"X", special:false, equip:true, pos:[], level:"", payStatus:"미납"},
+  {id:50, name:"허진희", no:47, fee:"월 4", feeRaw:"월 4", special:false, equip:true, pos:[], level:"", payStatus:"미납"},
+  {id:51, name:"홍창의", no:14, fee:"월 4", feeRaw:"월 4", special:false, equip:true, pos:[], level:"", payStatus:"미납"},
+  {id:52, name:"홍혜련", no:null, fee:"X", feeRaw:"X", special:false, equip:false, pos:[], level:"", payStatus:"미납"},
+  {id:53, name:"황상하", no:null, fee:"월 8", feeRaw:"월 8", special:false, equip:false, pos:[], level:"", payStatus:"미납"}
 ],
   games: [
     {id:1, league:"아동연", title:"vs 제니우스", date:"2026-06-12", time:"23:00", place:"목동 아이스링크", levels:["초급반","중급반","상급반"], excluded:[], published:true, votes:{}},
@@ -535,7 +565,7 @@ const INITIAL_DB = {
   onedayChecks: {}
 };
 /* ===== localStorage 영속화 (본인 브라우저 한정 저장) ===== */
-const STORE_KEY='west-hockey-demo-v2';
+const STORE_KEY='west-hockey-demo-v3';
 let DB;
 (function loadDB(){
   try{
@@ -585,14 +615,16 @@ const dataService = {
 };
 
 const LEVELS=["기초반","초급반","중급반","상급반"];
-const FEES=["X","월 4","월 8","통합"];
-const FEE_LABEL={"X":"없음","월 4":"제니스","월 8":"장한평","통합":"통합권"};
+const FEES=["X","월 4","월 8","통합","휴식"];
+const FEE_LABEL={"X":"없음","월 4":"제니스","월 8":"장한평","통합":"통합권","휴식":"휴식"};
 function feeDisp(v){ return FEE_LABEL[v]||v; }
+const PAY_STATES=["납부","미납","휴식"];
 const POSITIONS=["F","D","골리"];
 const POS_LABEL={"F":"플레이어F","D":"플레이어D","골리":"골리"};
-// 골리 단독 여부 (레벨 무관)
-function isGoalieOnly(m){ return m.pos && m.pos.length===1 && m.pos[0]==='골리'; }
-function posText(m){ return (m.pos&&m.pos.length)? m.pos.map(p=>POS_LABEL[p]).join(' · ') : '미지정'; }
+// 포지션 단일값(문자열). 골리면 레벨 없음
+function posStr(m){ return (m.pos&&m.pos.length)? m.pos[0] : ''; }
+function isGoalieOnly(m){ return posStr(m)==='골리'; }
+function posText(m){ const p=posStr(m); return p?POS_LABEL[p]:'미지정'; }
 let role='admin';
 let selected=new Set();
 // 데모 기본 회원 = 지혜은
@@ -623,59 +655,65 @@ function adminTab(name,btn){
 
 /* ===== 통합 명단 ===== */
 let sortState={field:null,dir:1}; // dir 1=asc -1=desc
-let filters={pos:null,level:null,fee:null,paidThis:null,paidNext:null,equip:null}; // null=전체, 아니면 Set
+let filters={pos:null,level:null,fee:null,payStatus:null,equip:null}; // null=전체, 아니면 Set
 
 function memberFeeKey(m){ return m.fee==='X'?'없음':(m.special?'통합권 ⭐':feeDisp(m.fee)); }
+function effectivePay(m){ return m.fee==='휴식' ? '휴식' : (m.payStatus||'미납'); } // 회비 휴식이면 납부도 휴식
 function memberVal(m,field){
   if(field==='level') return m.level||'미지정';
   if(field==='fee') return memberFeeKey(m);
-  if(field==='paidThis'||field==='paidNext') return m[field]?'납부':'미납';
+  if(field==='payStatus') return effectivePay(m);
   if(field==='equip') return m.equip?'대여':'없음';
 }
 function getRows(){
   let rows=dataService.getMembers().slice();
-  // 필터 (AND, 각 컬럼 내부는 OR/중복허용)
+  // 이름 검색 (부분일치)
+  const q=(document.getElementById('name-search')?.value||'').trim();
+  if(q) rows=rows.filter(m=>m.name.includes(q));
+  // 필터 (AND)
   Object.keys(filters).forEach(f=>{
     if(!filters[f]) return;
     if(f==='pos'){
-      rows=rows.filter(m=>{
-        const labels=(m.pos&&m.pos.length)?m.pos.map(p=>POS_LABEL[p]):['미지정'];
-        return labels.some(l=>filters.pos.has(l));
-      });
+      rows=rows.filter(m=>{ const l=posStr(m)?POS_LABEL[posStr(m)]:'미지정'; return filters.pos.has(l); });
     } else {
       rows=rows.filter(m=>filters[f].has(memberVal(m,f)));
     }
   });
-  // 정렬
-  if(sortState.field==='name'){
-    rows.sort((a,b)=>a.name.localeCompare(b.name,'ko')*sortState.dir);
-  } else if(sortState.field==='no'){
+  // 정렬 (등번호만)
+  if(sortState.field==='no'){
     rows.sort((a,b)=>{
-      const av=a.no==null?Infinity:a.no, bv=b.no==null?Infinity:b.no; // 미배정은 항상 뒤
+      const av=a.no==null?Infinity:a.no, bv=b.no==null?Infinity:b.no;
       if(av===bv) return 0;
       return (av<bv?-1:1)*sortState.dir;
     });
   }
   return rows;
 }
-function payToggle(m,field){
-  const on=m[field];
-  return `<span class="pay-toggle">
-    <button class="${on?'on':''}" onclick="setPay(${m.id},'${field}',true)">O</button>
-    <button class="${!on?'':''}" onclick="setPay(${m.id},'${field}',false)" ${!on?'style="background:#f1f4f7;color:#90a1b0"':''}>X</button>
-  </span>`;
+// 3단 납부 토글 (납부 O / 미납 X / 휴식 🌴). 선택=파랑, 나머지=회색. 회비 휴식이면 자동 고정
+const PAY_GLYPH={"납부":"O","미납":"X","휴식":"🌴"};
+function payCtrl(m){
+  const locked = m.fee==='휴식';
+  const cur = effectivePay(m);
+  if(locked){
+    return `<span class="pay3 locked"><span class="seg on rest">🌴</span></span>`;
+  }
+  return `<span class="pay3">`+PAY_STATES.map(st=>{
+    const on = cur===st;
+    const cls = on ? (st==='납부'?'on ok':st==='미납'?'on no':'on rest') : '';
+    return `<button class="seg ${cls}" title="${st}" onclick="setPayStatus(${m.id},'${st}')">${PAY_GLYPH[st]}</button>`;
+  }).join('')+`</span>`;
 }
 function renderRoster(){
   const tb=document.getElementById('tb-roster'); tb.innerHTML='';
   const rows=getRows();
-  if(rows.length===0){ tb.innerHTML='<tr><td colspan="9" class="hint" style="text-align:center;padding:24px">조건에 맞는 회원이 없습니다.</td></tr>'; }
+  if(rows.length===0){ tb.innerHTML='<tr><td colspan="8" class="hint" style="text-align:center;padding:24px">조건에 맞는 회원이 없습니다.</td></tr>'; }
   rows.forEach(m=>{
     const lvOpts=['<option value="">미지정</option>'].concat(LEVELS.map(l=>`<option ${l===m.level?'selected':''}>${l}</option>`)).join('');
     const feeOpts=FEES.map(f=>`<option value="${f}" ${f===m.fee&&!m.special?'selected':''}>${feeDisp(f)}</option>`).join('')+(m.special?'<option selected>통합권 ⭐</option>':'');
     const goalieOnly=isGoalieOnly(m);
     const posCell=`<button class="poschip" onclick="openPosPicker(${m.id},this,event)">${posText(m)} ▾</button>`;
     const lvCell = goalieOnly
-      ? '<span class="lvdash" title="골리 단독은 레벨 구분이 없습니다">–</span>'
+      ? '<span class="lvdash" title="골리는 레벨 구분이 없습니다">–</span>'
       : `<select class="badge lv-${m.level}" style="border:0;padding:4px 6px" onchange="updMember(${m.id},'level',this.value)">${lvOpts}</select>`;
     tb.innerHTML+=`<tr>
       <td><input type="checkbox" class="chk rowchk" data-id="${m.id}" ${selected.has(m.id)?'checked':''} onclick="toggleRow(${m.id},this)"></td>
@@ -684,26 +722,31 @@ function renderRoster(){
       <td>${posCell}</td>
       <td>${lvCell}</td>
       <td><select style="padding:4px 6px" onchange="updFee(${m.id},this.value)">${feeOpts}</select></td>
-      <td>${payToggle(m,'paidThis')}</td>
-      <td>${payToggle(m,'paidNext')}</td>
+      <td>${payCtrl(m)}</td>
       <td><input type="checkbox" class="chk" ${m.equip?'checked':''} onclick="updMember(${m.id},'equip',this.checked)"></td>
     </tr>`;
   });
   renderStats(); renderActiveFilters(); syncSortBtns();
 }
-/* 정렬 */
+function setPayStatus(id,st){ dataService.updateMember(id,{payStatus:st}); renderRoster(); }
+function toggleNameSearch(ev){
+  ev.stopPropagation();
+  const inp=document.getElementById('name-search');
+  inp.classList.toggle('hidden');
+  if(!inp.classList.contains('hidden')) inp.focus();
+  else { inp.value=''; renderRoster(); }
+}
+/* 정렬 (등번호만) */
 function toggleSort(field){
-  if(sortState.field!==field){ sortState={field,dir:1}; }      // 1클릭: 오름차순
-  else if(sortState.dir===1){ sortState.dir=-1; }              // 2클릭: 내림차순
-  else { sortState={field:null,dir:1}; }                        // 3클릭: 해제
+  if(sortState.field!==field){ sortState={field,dir:1}; }
+  else if(sortState.dir===1){ sortState.dir=-1; }
+  else { sortState={field:null,dir:1}; }
   renderRoster();
 }
 function syncSortBtns(){
-  ['no','name'].forEach(f=>{
-    const b=document.getElementById('sort-'+f); if(!b)return;
-    b.classList.remove('asc','desc'); b.textContent='▲▼';
-    if(sortState.field===f){ b.classList.add(sortState.dir===1?'asc':'desc'); b.textContent=sortState.dir===1?'▲':'▼'; }
-  });
+  const b=document.getElementById('sort-no'); if(!b)return;
+  b.classList.remove('asc','desc'); b.textContent='▲▼';
+  if(sortState.field==='no'){ b.classList.add(sortState.dir===1?'asc':'desc'); b.textContent=sortState.dir===1?'▲':'▼'; }
 }
 /* 필터 */
 let filterTarget=null;
@@ -711,7 +754,7 @@ function filterOptions(field){
   if(field==='pos') return ['플레이어F','플레이어D','골리','미지정'];
   if(field==='level') return ['기초반','초급반','중급반','상급반','미지정'];
   if(field==='fee'){ const s=new Set(); dataService.getMembers().forEach(m=>s.add(memberFeeKey(m))); return [...s]; }
-  if(field==='paidThis'||field==='paidNext') return ['납부','미납'];
+  if(field==='payStatus') return ['납부','미납','휴식'];
   if(field==='equip') return ['대여','없음'];
 }
 function openFilter(field,btn,ev){
@@ -719,7 +762,7 @@ function openFilter(field,btn,ev){
   const pop=document.getElementById('filter-pop');
   if(pop.classList.contains('open') && filterTarget===field){ pop.classList.remove('open'); filterTarget=null; return; }
   filterTarget=field;
-  document.getElementById('fp-title').textContent='('+ {pos:'포지션',level:'레벨',fee:'회비유형',paidThis:'이번달',paidNext:'다음달',equip:'장비'}[field] +')';
+  document.getElementById('fp-title').textContent='('+ {pos:'포지션',level:'레벨',fee:'회비유형',payStatus:'납부',equip:'장비'}[field] +')';
   const cur=filters[field];
   document.getElementById('fp-list').innerHTML=filterOptions(field).map(o=>
     `<label><input type="checkbox" class="chk" value="${o}" ${(!cur||cur.has(o))?'checked':''}> ${o}</label>`).join('');
@@ -738,7 +781,7 @@ function applyFilter(){
 function clearFilter(){ filters[filterTarget]=null; document.getElementById('filter-pop').classList.remove('open'); renderRoster(); }
 function renderActiveFilters(){
   const box=document.getElementById('active-filters'); box.innerHTML='';
-  const names={pos:'포지션',level:'레벨',fee:'회비',paidThis:'이번달',paidNext:'다음달',equip:'장비'};
+  const names={pos:'포지션',level:'레벨',fee:'회비',payStatus:'납부',equip:'장비'};
   Object.keys(filters).forEach(f=>{
     const btn=document.getElementById('filt-'+f); if(btn) btn.classList.toggle('active',!!filters[f]);
     if(filters[f]) box.innerHTML+=`<span class="fchip">${names[f]}: ${[...filters[f]].join(', ')}<button onclick="removeFilter('${f}')">×</button></span>`;
@@ -772,32 +815,41 @@ function openPosPicker(id,btn,ev){
   if(pop.classList.contains('open') && posTarget===id){ pop.classList.remove('open'); posTarget=null; return; }
   posTarget=id;
   const m=dataService.getMember(id);
-  document.getElementById('pp-list').innerHTML=POSITIONS.map(p=>
-    `<label><input type="checkbox" class="chk" value="${p}" ${m.pos.includes(p)?'checked':''}> ${POS_LABEL[p]}</label>`).join('');
+  const cur=posStr(m);
+  document.getElementById('pp-list').innerHTML=
+    `<label><input type="radio" name="pospick" class="chk" value="" ${!cur?'checked':''}> 미지정</label>`+
+    POSITIONS.map(p=>`<label><input type="radio" name="pospick" class="chk" value="${p}" ${cur===p?'checked':''}> ${POS_LABEL[p]}</label>`).join('');
   const r=btn.getBoundingClientRect();
   pop.style.top=(r.bottom+6)+'px';
   pop.style.left=(Math.min(r.left, window.innerWidth-180))+'px';
   pop.classList.add('open');
 }
 function applyPos(){
-  const m=dataService.getMember(posTarget);
-  const chosen=[...document.querySelectorAll('#pp-list input:checked')].map(i=>i.value);
-  const patch={pos:chosen};
-  if(chosen.length===1 && chosen[0]==='골리') patch.level=''; // 골리 단독 → 레벨 제거
+  const sel=document.querySelector('#pp-list input:checked');
+  const v=sel?sel.value:'';
+  const patch={pos: v?[v]:[]};
+  if(v==='골리') patch.level=''; // 골리 → 레벨 제거
   dataService.updateMember(posTarget,patch);
   document.getElementById('pos-pop').classList.remove('open'); posTarget=null;
   renderRoster();
 }
 function updFee(id,v){ const m=dataService.getMember(id);
   if(v==='통합권 ⭐'){ return; } // 특이건 유지
-  dataService.updateMember(id,{fee:v,feeRaw:v,special:false}); renderRoster(); }
-function setPay(id,f,v){ dataService.updateMember(id,{[f]:v}); renderRoster(); }
+  const patch={fee:v,feeRaw:v,special:false};
+  if(v==='휴식') patch.payStatus='휴식'; // 회비 휴식 → 납부도 휴식
+  dataService.updateMember(id,patch); renderRoster(); }
 function renderStats(){
   const ms=dataService.getMembers();
   document.getElementById('s-total').textContent=ms.length;
   document.getElementById('s-jersey').textContent=ms.filter(m=>m.no!=null).length;
-  document.getElementById('s-nojersey').textContent=ms.filter(m=>m.no==null).length;
-  document.getElementById('s-thismonth').textContent=ms.filter(m=>m.paidThis).length;
+  document.getElementById('s-equip').textContent=ms.filter(m=>m.equip).length;
+  const ok=ms.filter(m=>effectivePay(m)==='납부').length;
+  const no=ms.filter(m=>effectivePay(m)==='미납').length;
+  const rest=ms.filter(m=>effectivePay(m)==='휴식').length;
+  document.getElementById('s-pay-ok').textContent=ok;
+  document.getElementById('s-pay-no').textContent=no;
+  document.getElementById('s-pay-rest').textContent=rest;
+  document.getElementById('s-pay-total').textContent=ms.length;
 }
 
 /* ===== 일괄 선택/적용 ===== */
@@ -820,19 +872,24 @@ function bulkFieldChange(){
   else if(f==='level') opts=LEVELS.map(l=>[l,l]).concat([['','미지정']]);
   else if(f==='fee') opts=FEES.map(x=>[x,feeDisp(x)]);
   else if(f==='equip') opts=[['true','대여 O'],['false','대여 X']];
-  else opts=[['true','납부 O'],['false','미납 X']];
+  else if(f==='payStatus') opts=PAY_STATES.map(s=>[s,s]);
+  else opts=[['true','O'],['false','X']];
   sel.innerHTML=opts.map(([v,t])=>`<option value="${v}">${t}</option>`).join('');
 }
 function applyBulk(){
   if(selected.size===0)return;
   const f=document.getElementById('bulk-field').value;
   let v=document.getElementById('bulk-value').value;
-  if(f==='equip'||f==='paidThis'||f==='paidNext') v=(v==='true');
+  if(f==='equip') v=(v==='true');
   selected.forEach(id=>{
-    if(f==='fee') dataService.updateMember(id,{fee:v,feeRaw:v,special:false});
+    if(f==='fee'){
+      const patch={fee:v,feeRaw:v,special:false};
+      if(v==='휴식') patch.payStatus='휴식';
+      dataService.updateMember(id,patch);
+    }
     else if(f==='pos'){
       const patch={pos:v?[v]:[]};
-      if(v==='골리') patch.level=''; // 골리 단독 → 레벨 제거
+      if(v==='골리') patch.level='';
       dataService.updateMember(id,patch);
     }
     else dataService.updateMember(id,{[f]:v});
@@ -974,13 +1031,16 @@ function renderMember(){
   document.getElementById('m-name').textContent=`${m.name}${m.no!=null?'  #'+m.no:'  (등번호 미배정)'}`;
   document.getElementById('m-meta').textContent=`내 레벨 · ${m.level||'미지정'}`;
   document.getElementById('m-product').textContent=feeText(m);
-  document.getElementById('m-paid').textContent=m.paidThis?'완료':'미납';
+  const pay=effectivePay(m);
+  document.getElementById('m-paid').textContent = pay==='납부'?'완료':pay;
   document.getElementById('m-equip').textContent=m.equip?'대여 중':'없음';
   const pn=document.getElementById('m-paynotice');
-  if(m.fee!=='X' && !m.paidThis){
+  if(m.fee==='휴식'){
+    pn.innerHTML=`<div class="notice" style="background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.25);color:#eaf4ff">😌 휴식 회원입니다. 복귀 시 회비를 다시 설정해 주세요.</div>`;
+  } else if(m.fee!=='X' && pay==='미납'){
     pn.innerHTML=`<div class="notice" style="background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.25);color:#eaf4ff">💳 이번 달 회비가 아직 미납입니다. 확인 부탁드려요. <span class="hint" style="color:#bcd6ee">(실서비스에선 이 시점에 푸시 알림)</span></div>`;
   } else if(m.fee!=='X'){
-    pn.innerHTML=`<div class="notice" style="background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.25);color:#eaf4ff">✅ 이번 달 회비 납부 완료. 다음 달 결제 시점에 미리 알림을 보내드려요.</div>`;
+    pn.innerHTML=`<div class="notice" style="background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.25);color:#eaf4ff">✅ 이번 달 회비 납부 완료.</div>`;
   } else pn.innerHTML='';
   renderMemberGames();
 }
@@ -1021,7 +1081,7 @@ function renderManage(){
 function addMember(){
   const name=add_name.value.trim(); if(!name){alert('이름을 입력하세요.');return;}
   const noV=add_no.value;
-  dataService.addMember({name,no:noV?+noV:null,fee:add_fee.value,feeRaw:add_fee.value,special:false,equip:add_eq.checked,level:"",paidThis:false,paidNext:false});
+  dataService.addMember({name,no:noV?+noV:null,fee:add_fee.value,feeRaw:add_fee.value,special:false,equip:add_eq.checked,level:"",pos:[],payStatus:add_fee.value==='휴식'?'휴식':'미납'});
   add_name.value='';add_no.value='';add_eq.checked=false; refreshAll();
 }
 function delMember(id){ const m=dataService.getMember(id);
@@ -1036,11 +1096,14 @@ function seedDemo(){
     "박수민":"중급반", "허진희":"초급반", "홍창의":"초급반", "이태경":"중급반",
     "장병주":"상급반", "김흥재":"상급반", "추현용":"초급반", "변종웅":"중급반" };
   DB.members.forEach(m=>{ if(seed[m.name]) m.level=seed[m.name]; });
-  const posSeed={ "강소현":["F"], "김세민":["F","D"], "최준성":["D"], "박수민":["F"],
-    "허진희":["F"], "홍창의":["D"], "이태경":["F"], "장병주":["골리"], // 골리 단독 예시
-    "김흥재":["D"], "추현용":["F"], "변종웅":["골리","D"], "지혜은":["F"] };
+  const posSeed={ "강소현":["F"], "김세민":["F"], "최준성":["D"], "박수민":["F"],
+    "허진희":["F"], "홍창의":["D"], "이태경":["F"], "장병주":["골리"], // 골리 예시
+    "김흥재":["D"], "추현용":["F"], "변종웅":["D"], "지혜은":["F"] };
   DB.members.forEach(m=>{ if(posSeed[m.name]) m.pos=posSeed[m.name]; });
-  DB.members.forEach(m=>{ if(isGoalieOnly(m)) m.level=''; }); // 골리 단독은 레벨 제거
+  DB.members.forEach(m=>{ if(isGoalieOnly(m)) m.level=''; }); // 골리는 레벨 제거
+  // 납부 샘플 (시연용)
+  const paySeed={ "강소현":"납부", "김세민":"미납", "최준성":"납부", "이태경":"미납" };
+  DB.members.forEach(m=>{ if(paySeed[m.name]) m.payStatus=paySeed[m.name]; });
 }
 if(!_seeded){ seedDemo(); saveDB(); } // 첫 방문(저장본 없음)에만 시드 후 저장
 
