@@ -155,7 +155,7 @@
   .poschip{border:1.5px solid var(--line);background:#fff;border-radius:7px;padding:5px 9px;font-size:11.5px;
     font-weight:700;color:var(--rink);cursor:pointer;white-space:nowrap}
   .poschip:hover{border-color:var(--blue)}
-  .lvdash{color:#b3c0cc;font-weight:800;font-size:15px;padding-left:8px}
+  .lvdash{color:#b3c0cc;font-weight:800;font-size:15px}
   .pay-toggle{display:inline-flex;border:1.5px solid var(--line);border-radius:7px;overflow:hidden}
   .pay-toggle button{border:0;background:#fff;padding:4px 9px;font-size:11px;font-weight:700;cursor:pointer;color:#90a1b0}
   .pay-toggle button.on{background:var(--green);color:#fff}
@@ -194,18 +194,67 @@
   .jlegend span{display:inline-flex;align-items:center;gap:5px}
   .swatch{width:14px;height:14px;border-radius:4px;display:inline-block;border:1px solid var(--line)}
   @media(max-width:680px){
-    .wrap{padding:12px}.pay-status{gap:14px}
+    .wrap{padding:12px}
+    header{padding:10px 12px;gap:8px}
+    header .brand{font-size:13px;gap:7px}
+    .brand .puck{width:16px;height:16px}
+    .role-switch button{padding:6px 10px;font-size:12px}
+    .gear{width:34px;height:34px;font-size:15px}
+    .savebar{font-size:10.5px;padding:8px 12px;line-height:1.4}
+    .tabs button{padding:10px 10px;font-size:12.5px}
+    .stat-grid,.od-statgrid{grid-template-columns:repeat(2,1fr);gap:8px}
+    .stat,.od-stat{padding:12px}
+    .stat .v,.od-stat .v{font-size:21px}
     .jgrid{grid-template-columns:repeat(5,1fr)}
     .jcell .jname{font-size:9.5px}
-    header .brand{font-size:14px}
     .bulkbar{flex-direction:column;align-items:stretch}
     .bulkbar select,.bulkbar .btn{width:100%}
+    .filter-pop{min-width:150px;max-width:80vw}
+
+    /* 회원 통합 명단: 표 → 카드형 스택 */
+    #a-roster .tbl-scroll{overflow:visible}
+    #a-roster table,#a-roster thead,#a-roster tbody,#a-roster tr,#a-roster td{display:block;width:100%}
+    #a-roster table{min-width:0}
+    #a-roster thead{display:none}
+    #a-roster tbody tr{background:#fff;border:1px solid var(--line);border-radius:12px;
+      padding:10px 12px 12px;margin-bottom:10px;position:relative;display:grid;
+      grid-template-columns:1fr 1fr;gap:8px 10px;align-items:center}
+    #a-roster tbody tr td{border:0;padding:0;white-space:normal}
+    /* 체크박스: 우상단 */
+    #a-roster tbody td:nth-child(1){position:absolute;top:10px;right:10px;width:auto}
+    /* 등번호 + 이름: 한 줄 강조, 전체폭 */
+    #a-roster tbody td:nth-child(2){grid-column:1;justify-self:start}
+    #a-roster tbody td:nth-child(3){grid-column:2;justify-self:start;font-size:16px}
+    #a-roster .jno-input{width:54px}
+    /* 라벨 부착 (포지션·레벨·회비·이번달·다음달·장비) */
+    #a-roster tbody td:nth-child(n+4){grid-column:span 1}
+    #a-roster tbody td:nth-child(4)::before{content:"포지션";}
+    #a-roster tbody td:nth-child(5)::before{content:"레벨";}
+    #a-roster tbody td:nth-child(6)::before{content:"회비유형";}
+    #a-roster tbody td:nth-child(7)::before{content:"이번달";}
+    #a-roster tbody td:nth-child(8)::before{content:"다음달";}
+    #a-roster tbody td:nth-child(9)::before{content:"장비";}
+    #a-roster tbody td:nth-child(n+4)::before{display:block;font-size:10px;color:var(--muted);font-weight:700;margin-bottom:3px}
+    #a-roster .poschip{width:100%;text-align:left}
+    /* 설정 패널 모바일 풀폭 */
+    .od-panel{width:100%}
+    .od-memrow{grid-template-columns:1fr 1fr;gap:6px}
+    .od-memrow .del{grid-column:2;justify-self:end;width:auto;padding:6px 12px}
+    .od-card{grid-template-columns:38px 1fr;gap:9px}
+    .od-checks{grid-column:1/-1;flex-direction:row;justify-content:flex-start;gap:14px;margin-top:4px}
+    .game-card .row{flex-direction:column;align-items:flex-start !important}
+    .exgrid{gap:5px}
+  }
+  @media(max-width:380px){
+    .stat-grid,.od-statgrid{grid-template-columns:1fr 1fr}
+    .jgrid{grid-template-columns:repeat(4,1fr)}
+    #a-roster tbody tr{grid-template-columns:1fr}
   }
 </style>
 </head>
 <body>
 <header>
-  <div class="brand"><span class="puck"></span> 하키팀 운영 시스템 <span class="demo-flag">DEMO</span></div>
+  <div class="brand"><span class="puck"></span> 하키팀 운영 시스템</div>
   <div class="htools">
     <div class="role-switch">
       <button id="r-admin" class="active" onclick="setRole('admin')">운영자</button>
@@ -215,7 +264,7 @@
     <button class="gear" id="resetBtn" title="초기 데모 데이터로 되돌리기" onclick="resetDB()">&#8635;</button>
   </div>
 </header>
-<div class="savebar">데모 모드 · 변경 내용은 <b>이 브라우저에 자동 저장</b>되어 새로고침해도 유지됩니다 (이 기기·브라우저 한정, 다른 사람과 공유 안 됨). 우측 ↻ 버튼으로 초기화 · 영구·공유 저장은 Supabase 연동 단계</div>
+
 
 <div class="wrap">
   <div id="view-admin">
@@ -241,7 +290,6 @@
             <th><input type="checkbox" class="chk" id="chk-all" onclick="toggleAll(this)"></th>
             <th>등번호 <button class="sortbtn" onclick="toggleSort('no')" id="sort-no" title="정렬">▲▼</button></th>
             <th>이름 <button class="sortbtn" onclick="toggleSort('name')" id="sort-name" title="정렬">▲▼</button></th>
-            <th>포지션 <button class="filtbtn" onclick="openFilter('pos',this,event)" id="filt-pos" title="필터">▾</button></th>
             <th>포지션 <button class="filtbtn" onclick="openFilter('pos',this,event)" id="filt-pos" title="필터">▾</button></th>
             <th>레벨 <button class="filtbtn" onclick="openFilter('level',this,event)" id="filt-level" title="필터">▾</button></th>
             <th>회비유형 <button class="filtbtn" onclick="openFilter('fee',this,event)" id="filt-fee" title="필터">▾</button></th>
@@ -538,6 +586,8 @@ const dataService = {
 
 const LEVELS=["기초반","초급반","중급반","상급반"];
 const FEES=["X","월 4","월 8","통합"];
+const FEE_LABEL={"X":"없음","월 4":"제니스","월 8":"장한평","통합":"통합권"};
+function feeDisp(v){ return FEE_LABEL[v]||v; }
 const POSITIONS=["F","D","골리"];
 const POS_LABEL={"F":"플레이어F","D":"플레이어D","골리":"골리"};
 // 골리 단독 여부 (레벨 무관)
@@ -548,9 +598,9 @@ let selected=new Set();
 // 데모 기본 회원 = 지혜은
 let currentMember=(DB.members.find(m=>m.name==='지혜은')||DB.members[0]).id;
 
-function feeText(m){ if(m.fee==='X')return '없음'; return m.special?'통합 ⭐':m.fee; }
+function feeText(m){ if(m.fee==='X')return '없음'; return m.special?'통합권 ⭐':feeDisp(m.fee); }
 function feeBadge(m){ if(m.fee==='X')return '<span class="badge pill-no">없음</span>';
-  return m.special?'<span class="badge pill-fee">통합 <span class="star">⭐</span></span>':`<span class="badge pill-fee">${m.fee}</span>`; }
+  return m.special?'<span class="badge pill-fee">통합권 <span class="star">⭐</span></span>':`<span class="badge pill-fee">${feeDisp(m.fee)}</span>`; }
 function jerseyBadge(m){ return m.no!=null?`<span class="num">${m.no}</span>`:'<span class="num none">미배정</span>'; }
 
 function setRole(r){
@@ -575,7 +625,7 @@ function adminTab(name,btn){
 let sortState={field:null,dir:1}; // dir 1=asc -1=desc
 let filters={pos:null,level:null,fee:null,paidThis:null,paidNext:null,equip:null}; // null=전체, 아니면 Set
 
-function memberFeeKey(m){ return m.fee==='X'?'없음':(m.special?'통합 ⭐':m.fee); }
+function memberFeeKey(m){ return m.fee==='X'?'없음':(m.special?'통합권 ⭐':feeDisp(m.fee)); }
 function memberVal(m,field){
   if(field==='level') return m.level||'미지정';
   if(field==='fee') return memberFeeKey(m);
@@ -621,7 +671,7 @@ function renderRoster(){
   if(rows.length===0){ tb.innerHTML='<tr><td colspan="9" class="hint" style="text-align:center;padding:24px">조건에 맞는 회원이 없습니다.</td></tr>'; }
   rows.forEach(m=>{
     const lvOpts=['<option value="">미지정</option>'].concat(LEVELS.map(l=>`<option ${l===m.level?'selected':''}>${l}</option>`)).join('');
-    const feeOpts=FEES.map(f=>`<option value="${f}" ${f===m.fee&&!m.special?'selected':''}>${f==='X'?'없음':f}</option>`).join('')+(m.special?'<option selected>통합 ⭐</option>':'');
+    const feeOpts=FEES.map(f=>`<option value="${f}" ${f===m.fee&&!m.special?'selected':''}>${feeDisp(f)}</option>`).join('')+(m.special?'<option selected>통합권 ⭐</option>':'');
     const goalieOnly=isGoalieOnly(m);
     const posCell=`<button class="poschip" onclick="openPosPicker(${m.id},this,event)">${posText(m)} ▾</button>`;
     const lvCell = goalieOnly
@@ -739,7 +789,7 @@ function applyPos(){
   renderRoster();
 }
 function updFee(id,v){ const m=dataService.getMember(id);
-  if(v==='통합 ⭐'){ return; } // 특이건 유지
+  if(v==='통합권 ⭐'){ return; } // 특이건 유지
   dataService.updateMember(id,{fee:v,feeRaw:v,special:false}); renderRoster(); }
 function setPay(id,f,v){ dataService.updateMember(id,{[f]:v}); renderRoster(); }
 function renderStats(){
@@ -768,7 +818,7 @@ function bulkFieldChange(){
   let opts=[];
   if(f==='pos') opts=POSITIONS.map(p=>[p,POS_LABEL[p]]).concat([['','미지정']]);
   else if(f==='level') opts=LEVELS.map(l=>[l,l]).concat([['','미지정']]);
-  else if(f==='fee') opts=FEES.map(x=>[x,x==='X'?'없음':x]);
+  else if(f==='fee') opts=FEES.map(x=>[x,feeDisp(x)]);
   else if(f==='equip') opts=[['true','대여 O'],['false','대여 X']];
   else opts=[['true','납부 O'],['false','미납 X']];
   sel.innerHTML=opts.map(([v,t])=>`<option value="${v}">${t}</option>`).join('');
