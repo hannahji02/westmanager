@@ -449,11 +449,12 @@ async function pickPay(method){
   // 알림 기록 (카드/계좌 모두 운영진에게 알림)
   const msg=`${me?me.name:'회원'}님이 추가 레슨권 구매 ${method}을(를) 선택하였습니다.`;
   try{
-    await sb.from('notifications').insert({
+    const {error}=await sb.from('notifications').insert({
       member_id:me?me.id:null, member_name:me?me.name:null,
       type:'lesson_purchase', method, message:msg, is_read:false
     });
-  }catch(e){/* 기록 실패해도 안내는 계속 */}
+    if(error){alert('알림 저장 실패\nmessage: '+error.message+'\ncode: '+error.code);}
+  }catch(e){alert('알림 저장 예외: '+e.message);}
 
   document.getElementById('buy-step1').style.display='none';
   const s2=document.getElementById('buy-step2');s2.style.display='block';
