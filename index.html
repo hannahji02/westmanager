@@ -365,7 +365,8 @@ function renderCalGrid(){
       const dots=dayGames.map(g=>`<span class="gdot ${evClass(g.event_type)}"></span>`).join('');
       if(dayGames.length===0) return `<td><div style="font-weight:700;color:var(--ink)">${dt}</div></td>`;
       const tip=encodeURIComponent(JSON.stringify(dayGames.map(g=>({
-        type:g.event_type, time:g.game_time?g.game_time.slice(0,5):'', place:g.place||'', info:g.title||g.league||''
+        type:g.event_type, time:g.game_time?g.game_time.slice(0,5):'', place:g.place||'',
+        info:isTraining(g.event_type)?'':(g.title||g.league||'')
       }))));
       const dateLabel=`${mo+1}.${dt}`;
       return `<td class="gcell-has" data-tip="${tip}" data-date="${dateLabel}"
