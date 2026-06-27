@@ -45,12 +45,16 @@
   .gdot{width:13px;height:13px;border-radius:50%;cursor:pointer;border:1.5px solid rgba(0,0,0,.06)}
   .gdot.train{background:var(--sky)}.gdot.game{background:#f3a9a0}.gdot.special{background:#c9b3ef}.gdot.event{background:#f5cf5a}
   .gdot.mine{box-shadow:0 0 0 2px var(--blue)}
-  .cal-tip{position:fixed;z-index:50;background:var(--slate);color:#fff;border-radius:10px;padding:9px 12px;font-size:12px;line-height:1.5;box-shadow:0 6px 20px rgba(30,43,56,.28);max-width:200px;display:none;pointer-events:none}
+  .cal-tip{position:fixed;z-index:50;background:var(--slate);color:#fff;border-radius:10px;padding:11px 13px;font-size:12px;line-height:1.5;box-shadow:0 6px 20px rgba(30,43,56,.28);max-width:220px;display:none}
   .cal-tip.show{display:block}
-  .cal-tip .tt-ev{font-weight:800;margin-bottom:2px}
-  .cal-tip .tt-sub{color:#cdd9e4;font-size:11px}
-  .cal-tip .tt-tag{display:inline-block;font-size:10px;font-weight:700;padding:1px 7px;border-radius:20px;margin-top:4px}
+  .cal-tip .tt-date{font-weight:800;font-size:12.5px;margin-bottom:7px;color:#cfe0ee}
+  .cal-tip .tt-line{display:flex;align-items:flex-start;gap:6px;margin-bottom:6px}
+  .cal-tip .tt-line:last-child{margin-bottom:0}
+  .cal-tip .tt-txt{font-size:11.5px;color:#fff;line-height:1.4;padding-top:1px}
+  .cal-tip .tt-tag{display:inline-block;flex-shrink:0;font-size:10px;font-weight:800;padding:2px 7px;border-radius:20px;white-space:nowrap}
   .tt-tag.train{background:var(--sky);color:#143b5e}.tt-tag.game{background:#f3a9a0;color:#5e1812}.tt-tag.special{background:#c9b3ef;color:#3d2a66}.tt-tag.event{background:#f5cf5a;color:#6b5310}
+  .gcell-has{cursor:pointer}
+  .grid7 td.gcell-has:hover{background:var(--sky-soft);border-radius:8px}
   .legend{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:12px;padding:10px;background:#fff;border:1px solid var(--line);border-radius:10px}
   .legend .lg{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--muted);font-weight:600}
   .legend .dot{width:11px;height:11px;border-radius:50%}
@@ -357,15 +361,16 @@ function renderCalGrid(){
   for(let dt=1;dt<=last.getDate();dt++)cells.push(dt);
   let rows='';for(let i=0;i<cells.length;i+=7){
     rows+='<tr>'+Array.from({length:7},(_,j)=>{const dt=cells[i+j];if(!dt)return '<td></td>';
-      const dots=(byDay[dt]||[]).map(g=>{
-        const time=g.game_time?g.game_time.slice(0,5):'';
-        const place=g.place||'';
-        const name=g.title||g.league||g.event_type;
-        const tip=encodeURIComponent(JSON.stringify({ev:name,time,place,type:g.event_type}));
-        return `<span class="gdot ${evClass(g.event_type)}" data-tip="${tip}"
-          onmouseenter="showTip(event)" onmouseleave="hideTip()" onclick="toggleTip(event)"></span>`;
-      }).join('');
-      return `<td><div style="font-weight:700;color:var(--ink)">${dt}</div><div class="gcell-dots">${dots}</div></td>`;
+      const dayGames=(byDay[dt]||[]).slice().sort((a,b)=>(a.game_time||'').localeCompare(b.game_time||''));
+      const dots=dayGames.map(g=>`<span class="gdot ${evClass(g.event_type)}"></span>`).join('');
+      if(dayGames.length===0) return `<td><div style="font-weight:700;color:var(--ink)">${dt}</div></td>`;
+      const tip=encodeURIComponent(JSON.stringify(dayGames.map(g=>({
+        type:g.event_type, time:g.game_time?g.game_time.slice(0,5):'', place:g.place||'', info:g.title||g.league||''
+      }))));
+      const dateLabel=`${mo+1}.${dt}`;
+      return `<td class="gcell-has" data-tip="${tip}" data-date="${dateLabel}"
+        onmouseenter="showTip(event)" onmouseleave="hideTip()" onclick="toggleTip(event)">
+        <div style="font-weight:700;color:var(--ink)">${dt}</div><div class="gcell-dots">${dots}</div></td>`;
     }).join('')+'</tr>';
   }
   box.innerHTML=`<div class="grid7"><table><thead><tr>${WEEK.map(w=>`<th>${w}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div>`
@@ -465,32 +470,36 @@ async function pickPay(method){
   }
 }
 
-const TYPE_KO={train:'정기 훈련',game:'경기',special:'특강'};
-function tipHTML(d){
-  const cls=d.type==='GAME'?'game':d.type==='특강'?'special':d.type==='행사'?'event':'train';
-  const sub=[d.time,d.place].filter(Boolean).join(' · ');
-  return `<div class="tt-ev">${d.ev}</div>${sub?`<div class="tt-sub">${sub}</div>`:''}<span class="tt-tag ${cls}">${d.type}</span>`;
+const TYPE_LABEL={'GAME':'경기','특강':'특강','행사':'행사','훈련':'정기 훈련'};
+function evLabel(t){return TYPE_LABEL[t]||'정기 훈련';}
+function tipListHTML(date,list){
+  const rows=list.map(d=>{
+    const cls=d.type==='GAME'?'game':d.type==='특강'?'special':d.type==='행사'?'event':'train';
+    const parts=[d.time,d.place,d.info].filter(Boolean).join(' ');
+    return `<div class="tt-line"><span class="tt-tag ${cls}">${evLabel(d.type)}</span><span class="tt-txt">${parts||'-'}</span></div>`;
+  }).join('');
+  return `<div class="tt-date">${date}</div>${rows}`;
 }
 function placeTip(el){
   const tip=document.getElementById('cal-tip');
   const r=el.getBoundingClientRect();
-  tip.style.left=Math.min(Math.max(r.left+r.width/2-90,8),window.innerWidth-200)+'px';
-  let top=r.bottom+8; if(top>window.innerHeight-90) top=r.top-tip.offsetHeight-8;
-  tip.style.top=top+'px';
+  tip.style.left=Math.min(Math.max(r.left+r.width/2-110,8),window.innerWidth-228)+'px';
+  let top=r.bottom+8; if(top>window.innerHeight-tip.offsetHeight-8) top=r.top-tip.offsetHeight-8;
+  tip.style.top=Math.max(top,8)+'px';
 }
 function showTip(e){
-  const el=e.currentTarget;const d=JSON.parse(decodeURIComponent(el.dataset.tip));
-  const tip=document.getElementById('cal-tip');tip.innerHTML=tipHTML(d);tip.classList.add('show');placeTip(el);
+  const el=e.currentTarget;const list=JSON.parse(decodeURIComponent(el.dataset.tip));
+  const tip=document.getElementById('cal-tip');tip.innerHTML=tipListHTML(el.dataset.date,list);tip.classList.add('show');placeTip(el);
 }
 function hideTip(){document.getElementById('cal-tip').classList.remove('show');}
 let tipOpenEl=null;
 function toggleTip(e){
   e.stopPropagation();const el=e.currentTarget;
   if(tipOpenEl===el){hideTip();tipOpenEl=null;return;}
-  const d=JSON.parse(decodeURIComponent(el.dataset.tip));
-  const tip=document.getElementById('cal-tip');tip.innerHTML=tipHTML(d);tip.classList.add('show');placeTip(el);tipOpenEl=el;
+  const list=JSON.parse(decodeURIComponent(el.dataset.tip));
+  const tip=document.getElementById('cal-tip');tip.innerHTML=tipListHTML(el.dataset.date,list);tip.classList.add('show');placeTip(el);tipOpenEl=el;
 }
-document.addEventListener('click',e=>{if(!e.target.classList.contains('gdot')){hideTip();tipOpenEl=null;}});
+document.addEventListener('click',e=>{if(!e.target.closest('.gcell-has')){hideTip();tipOpenEl=null;}});
 
 window.addEventListener('load',loadConfig);
 </script>
