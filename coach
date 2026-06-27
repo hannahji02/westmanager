@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WEST HOCKEY 출석부 (코치)</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-top:#dceaf6;--bg-bottom:#f4f8fc;--ink:#1a2b3c;--muted:#6b7d8f;--line:#dce6ef;
+    --card:#ffffff;--slate:#1e2b38;--slate-h:#2c3e4f;--blue:#2f7fd1;--blue-d:#1f5e9e;
+    --sky:#bcdcf3;--sky-soft:#eaf3fb;--pink:#ff5b86;--green:#1f9d6b;--red:#d35a4f;--amber:#d68910;--r:14px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{font-family:"Noto Sans KR",-apple-system,"Segoe UI","Malgun Gothic",sans-serif;
+    background:linear-gradient(180deg,var(--bg-top) 0%,var(--bg-bottom) 300px) no-repeat,var(--bg-bottom);
+    min-height:100vh;color:var(--ink);line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:620px;margin:0 auto;padding:18px 16px 60px}
+  header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;gap:10px}
+  .brand{display:flex;align-items:center;gap:9px;font-weight:800;font-size:17px;color:var(--slate)}
+  .puck{width:20px;height:20px;border-radius:50%;background:var(--slate)}
+  .conn{font-size:10.5px;font-weight:700;padding:3px 10px;border-radius:20px}
+  .conn.ok{background:#e6f5ee;color:var(--green)}.conn.bad{background:#fdeceb;color:var(--red)}.conn.wait{background:#fcf3e2;color:var(--amber)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:14px;box-shadow:0 1px 3px rgba(31,94,158,.05)}
+  .card h2{font-size:14px;color:var(--slate);margin-bottom:10px}
+  .lbl{font-size:12px;color:var(--muted);font-weight:700;display:block;margin-bottom:6px}
+  select,input{font:inherit;padding:10px;border:1.5px solid var(--line);border-radius:9px;font-size:14px;width:100%;background:#fff}
+  .sess-input{width:62px;text-align:center;font-weight:800;padding:7px}
+  .ddl{font-size:14px}
+  .train-meta{font-size:12px;color:var(--muted);margin-top:8px}
+  .att-row{display:flex;align-items:center;gap:10px;padding:12px 6px;border-bottom:1px solid var(--line)}
+  .att-row:last-child{border-bottom:0}
+  .att-row .nm{flex:1;font-weight:700;font-size:14.5px;color:var(--slate)}
+  .att-row .nm .sub{font-size:11px;color:var(--muted);font-weight:500;margin-top:2px}
+  .att-row .sess{font-size:12px;font-weight:800;color:var(--blue-d);min-width:54px;text-align:right}
+  .att-row .sess.zero{color:var(--red)}
+  .att-row.present{background:var(--sky-soft);border-radius:10px}
+  .chkbtn{border:1.5px solid var(--line);background:#fff;color:var(--muted);font-size:13px;font-weight:800;padding:8px 14px;border-radius:10px;cursor:pointer;white-space:nowrap}
+  .chkbtn.on{background:var(--green);color:#fff;border-color:var(--green)}
+  .adj{display:flex;gap:4px}
+  .adj button{width:30px;height:30px;border:1.5px solid var(--line);background:#fff;border-radius:8px;font-size:15px;font-weight:800;cursor:pointer;color:var(--slate)}
+  .adj button:hover{border-color:var(--blue)}
+  .tag{font-size:10px;font-weight:800;padding:1px 7px;border-radius:20px;background:var(--sky-soft);color:var(--blue-d);margin-left:6px}
+  .tag.added{background:#fcf3d6;color:#8a6b16}
+  .addbar{display:flex;gap:8px;margin-top:12px}
+  .addbar select{flex:1}
+  .btn{background:var(--slate);color:#fff;border:0;padding:10px 16px;border-radius:11px;font-weight:700;cursor:pointer;font-size:13px;white-space:nowrap}
+  .btn:hover{background:var(--slate-h)}
+  .btn.ghost{background:#fff;color:var(--slate);border:1.5px solid var(--line)}
+  .empty{text-align:center;padding:30px 12px;color:var(--muted);font-size:13px}
+  .summary{display:flex;gap:14px;font-size:12px;color:var(--muted);font-weight:700;margin-bottom:10px}
+  .summary b{color:var(--slate)}
+  .setup{background:#fff;border:1px solid var(--line);border-radius:18px;padding:28px;max-width:600px;margin:40px auto;line-height:1.7;box-shadow:0 4px 20px rgba(31,94,158,.08)}
+  .setup h2{font-size:18px;margin-bottom:12px;color:var(--slate)}.setup input{margin:6px 0 14px}
+  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--slate);color:#fff;padding:11px 20px;border-radius:12px;font-size:13px;font-weight:600;opacity:0;transition:.2s;z-index:200;pointer-events:none}
+  .toast.show{opacity:1}
+  .hint{font-size:12px;color:var(--muted)}
+  .notice-strip{background:#fff8ec;border:1px solid #f3e2bf;color:#8a6516;font-size:11.5px;border-radius:10px;padding:9px 12px;margin-bottom:12px;line-height:1.5}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand"><span class="puck"></span> WEST 출석부 <span class="hint" style="color:#9db6cc;font-weight:600">코치</span></div>
+    <span class="conn wait" id="conn">연결 대기</span>
+  </header>
+
+  <div id="setup" class="setup" style="display:none">
+    <h2>연결 설정 (최초 1회)</h2>
+    <p class="hint" style="margin-bottom:14px">Project URL과 publishable key 입력.</p>
+    <label class="hint" style="font-weight:700">Project URL</label>
+    <input id="in-url" placeholder="https://xxxxx.supabase.co">
+    <label class="hint" style="font-weight:700">publishable key</label>
+    <input id="in-key" placeholder="sb_publishable_...">
+    <button class="btn" onclick="saveConfig()" style="width:100%">연결</button>
+  </div>
+
+  <div id="main" style="display:none">
+    <div class="notice-strip">출석 체크 시 해당 회원의 잔여 회차가 <b>1회 차감</b>됩니다. 체크를 해제하면 차감분이 복구됩니다. 정기 훈련만 차감 대상입니다.</div>
+
+    <div class="card">
+      <label class="lbl">훈련 일정 선택</label>
+      <select id="game-select" class="ddl" onchange="loadAttendance()"></select>
+      <div class="train-meta" id="train-meta"></div>
+    </div>
+
+    <div class="card" id="att-card" style="display:none">
+      <div class="summary" id="summary"></div>
+      <div id="att-list"></div>
+      <div class="addbar">
+        <select id="add-select"></select>
+        <button class="btn" onclick="addMemberToList()">＋ 회원 추가 투입</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const DEFAULT_URL='https://bmuakmcydirbntuscfxy.supabase.co';
+const DEFAULT_KEY='sb_publishable_w9GONJJWa22vzTZtqQC3UA_ogb81j3A';
+const WEEK=['일','월','화','수','목','금','토'];
+let sb=null, games=[], members=[], curGame=null;
+let votes=[], attendance=[], roster=[]; // roster: 현재 화면 명단 [{member, source:'vote'|'added', present, deducted}]
+
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1600);}
+function setConn(s,t){const c=document.getElementById('conn');c.className='conn '+s;c.textContent=t;}
+function isTraining(t){return t==='훈련'||(t!=='GAME'&&t!=='특강'&&t!=='행사');}
+
+function loadConfig(){const u=localStorage.getItem('sb_url')||DEFAULT_URL,k=localStorage.getItem('sb_key')||DEFAULT_KEY;if(u&&k)initClient(u,k);else document.getElementById('setup').style.display='block';}
+function saveConfig(){const u=document.getElementById('in-url').value.trim().replace(/\/$/,''),k=document.getElementById('in-key').value.trim();if(!u||!k){alert('두 값 입력');return;}localStorage.setItem('sb_url',u);localStorage.setItem('sb_key',k);document.getElementById('setup').style.display='none';initClient(u,k);}
+function initClient(u,k){
+  if(typeof supabase==='undefined'||!supabase.createClient){setConn('bad','라이브러리 미로드');document.getElementById('setup').style.display='block';return;}
+  try{sb=supabase.createClient(u,k);document.getElementById('main').style.display='block';loadBase();}
+  catch(e){setConn('bad','연결 실패');alert('연결 실패: '+e.message);}
+}
+
+async function loadBase(){
+  setConn('wait','불러오는 중…');
+  const g=await sb.from('games').select('*').eq('published',true).order('game_date',{ascending:false});
+  const m=await sb.from('members').select('*').eq('status','active').order('name');
+  if(g.error||m.error){setConn('bad','오류');return;}
+  setConn('ok','연결됨 ✓');
+  // 훈련만 출석 대상
+  games=(g.data||[]).filter(x=>isTraining(x.event_type));
+  members=m.data||[];
+  const sel=document.getElementById('game-select');
+  if(games.length===0){sel.innerHTML='<option>등록된 훈련 일정이 없습니다</option>';return;}
+  sel.innerHTML='<option value="">— 훈련을 선택하세요 —</option>'+games.map(x=>{
+    const d=new Date(x.game_date+'T00:00:00');
+    return `<option value="${x.id}">${d.getMonth()+1}.${d.getDate()}(${WEEK[d.getDay()]}) ${x.game_time||''} ${x.place||''}</option>`;
+  }).join('');
+}
+
+async function loadAttendance(){
+  const gid=document.getElementById('game-select').value;
+  const card=document.getElementById('att-card');
+  if(!gid){card.style.display='none';curGame=null;document.getElementById('train-meta').textContent='';return;}
+  curGame=games.find(x=>String(x.id)===String(gid));
+  const d=new Date(curGame.game_date+'T00:00:00');
+  document.getElementById('train-meta').textContent=`${d.getFullYear()}.${d.getMonth()+1}.${d.getDate()}(${WEEK[d.getDay()]}) · ${curGame.game_time||'시간미정'} · ${curGame.place||'장소미정'}`;
+
+  // 참여 투표자 + 기존 출석기록 로드
+  const v=await sb.from('votes').select('member_id,choice').eq('game_id',gid);
+  const a=await sb.from('attendance').select('*').eq('game_id',gid);
+  votes=v.data||[]; attendance=a.data||[];
+
+  // 참여로 간주: choice in (참여, 출전)
+  const participantIds=new Set(votes.filter(x=>x.choice==='참여'||x.choice==='출전').map(x=>x.member_id));
+  const attById={}; attendance.forEach(x=>attById[x.member_id]=x);
+
+  // roster 구성: 참여투표자 + 출석기록에만 있는(추가투입된) 회원
+  const ids=new Set([...participantIds, ...attendance.map(x=>x.member_id)]);
+  roster=[...ids].map(id=>{
+    const m=members.find(x=>x.id===id);
+    if(!m)return null;
+    const at=attById[id];
+    return {member:m, source:participantIds.has(id)?'vote':'added', present:at?at.present:false, deducted:at?at.deducted:false};
+  }).filter(Boolean).sort((a,b)=>a.member.name.localeCompare(b.member.name));
+
+  card.style.display='block';
+  renderRoster();
+}
+
+function renderRoster(){
+  const box=document.getElementById('att-list');
+  if(roster.length===0){box.innerHTML='<div class="empty">참여 투표한 회원이 없습니다.<br>아래에서 직접 추가 투입하세요.</div>';}
+  else{
+    box.innerHTML=roster.map(r=>{
+      const sess=r.member.remaining_sessions??0;
+      return `<div class="att-row ${r.present?'present':''}">
+        <div class="nm">${r.member.name}${r.member.jersey_no!=null?` <span class="hint">No.${r.member.jersey_no}</span>`:''}
+          <span class="tag ${r.source==='added'?'added':''}">${r.source==='added'?'추가투입':'참여투표'}</span>
+          <div class="sub">잔여 ${sess}회${r.deducted?' · 이 훈련 차감됨':''}</div>
+        </div>
+        <div class="adj">
+          <button onclick="adjust(${r.member.id},-1)" title="회차 -1">−</button>
+          <button onclick="adjust(${r.member.id},1)" title="회차 +1">＋</button>
+        </div>
+        <span class="sess ${sess<=0?'zero':''}">${sess}회</span>
+        <button class="chkbtn ${r.present?'on':''}" onclick="togglePresent(${r.member.id})">${r.present?'출석 ✓':'출석'}</button>
+      </div>`;
+    }).join('');
+  }
+  // 추가 투입 후보 (명단에 없는 활성회원)
+  const inRoster=new Set(roster.map(r=>r.member.id));
+  const cand=members.filter(m=>!inRoster.has(m.id));
+  document.getElementById('add-select').innerHTML='<option value="">추가할 회원 선택</option>'+cand.map(m=>`<option value="${m.id}">${m.name}${m.jersey_no!=null?' (No.'+m.jersey_no+')':''}</option>`).join('');
+  // 요약
+  const present=roster.filter(r=>r.present).length;
+  document.getElementById('summary').innerHTML=`명단 <b>${roster.length}</b>명 · 출석 <b>${present}</b>명`;
+}
+
+// 출석 토글: 체크=차감, 해제=복구(그 체크로 깎인 경우만)
+async function togglePresent(memberId){
+  const r=roster.find(x=>x.member.id===memberId);if(!r)return;
+  const m=r.member;
+  if(!r.present){
+    // 출석 처리 → 1 차감 (아직 차감 안 된 경우만)
+    const newSess=(m.remaining_sessions??0)-1;
+    const e1=await sb.from('members').update({remaining_sessions:newSess}).eq('id',m.id);
+    if(e1.error){toast('차감 실패: '+e1.error.message);return;}
+    // attendance upsert
+    const e2=await sb.from('attendance').upsert({game_id:curGame.id,member_id:m.id,present:true,deducted:true,updated_at:new Date().toISOString()},{onConflict:'game_id,member_id'});
+    if(e2.error){toast('출석 저장 실패: '+e2.error.message);return;}
+    m.remaining_sessions=newSess; r.present=true; r.deducted=true;
+    toast(`${m.name} 출석 · 1회 차감 (잔여 ${newSess})`);
+  }else{
+    // 해제 → 그 출석으로 차감했으면 +1 복구
+    let newSess=m.remaining_sessions??0;
+    if(r.deducted){newSess=newSess+1;
+      const e1=await sb.from('members').update({remaining_sessions:newSess}).eq('id',m.id);
+      if(e1.error){toast('복구 실패: '+e1.error.message);return;}
+    }
+    const e2=await sb.from('attendance').upsert({game_id:curGame.id,member_id:m.id,present:false,deducted:false,updated_at:new Date().toISOString()},{onConflict:'game_id,member_id'});
+    if(e2.error){toast('해제 저장 실패: '+e2.error.message);return;}
+    m.remaining_sessions=newSess; r.present=false; r.deducted=false;
+    toast(`${m.name} 출석 해제${r.deducted?'':' · 1회 복구'}`);
+  }
+  renderRoster();
+}
+
+// 수동 회차 조정 (출석 토글과 별개)
+async function adjust(memberId,delta){
+  const r=roster.find(x=>x.member.id===memberId);if(!r)return;
+  const m=r.member;
+  const newSess=Math.max(0,(m.remaining_sessions??0)+delta);
+  if(newSess===(m.remaining_sessions??0)){toast('변경 없음 (0 미만 불가)');return;}
+  const {error}=await sb.from('members').update({remaining_sessions:newSess}).eq('id',m.id);
+  if(error){toast('조정 실패: '+error.message);return;}
+  m.remaining_sessions=newSess;
+  toast(`${m.name} 회차 ${delta>0?'+':''}${delta} → ${newSess}회`);
+  renderRoster();
+}
+
+function addMemberToList(){
+  const id=document.getElementById('add-select').value;
+  if(!id){toast('회원을 선택하세요');return;}
+  const m=members.find(x=>String(x.id)===String(id));if(!m)return;
+  roster.push({member:m,source:'added',present:false,deducted:false});
+  roster.sort((a,b)=>a.member.name.localeCompare(b.member.name));
+  renderRoster();
+  toast(`${m.name} 명단 추가 (출석 체크하면 차감)`);
+}
+
+window.addEventListener('load',loadConfig);
+</script>
+</body>
+</html>
