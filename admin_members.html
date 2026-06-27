@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -252,13 +251,16 @@ const POSITIONS=[["F","플레이어F"],["D","플레이어D"],["골리","골리"]
 const POS_LABEL={"F":"플레이어F","D":"플레이어D","골리":"골리"};
 const FEES=["없음","제니스","장한평","통합권","휴식"];
 const PAY=["납부","미납","휴식"], PAY_GLYPH={"납부":"O","미납":"X","휴식":"🌴"};
+// 기본 연결 정보 (publishable/anon key는 공개용이라 코드 삽입 안전)
+const DEFAULT_URL='https://bmuakmcydirbntuscfxy.supabase.co';
+const DEFAULT_KEY='sb_publishable_w9GONJJWa22vzTZtqQC3UA_ogb81j3A';
 let sb=null, members=[], notifs=[], selected=new Set(), sortState={field:null,dir:1};
 let filters={position:null,level:null,fee_type:null,pay_status:null,equip:null};
 
 function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1600);}
 function setConn(s,t){const c=document.getElementById('conn');c.className='conn '+s;c.textContent=t;}
 
-function loadConfig(){const u=localStorage.getItem('sb_url'),k=localStorage.getItem('sb_key');if(u&&k)initClient(u,k);else document.getElementById('setup').style.display='block';}
+function loadConfig(){const u=localStorage.getItem('sb_url')||DEFAULT_URL,k=localStorage.getItem('sb_key')||DEFAULT_KEY;if(u&&k)initClient(u,k);else document.getElementById('setup').style.display='block';}
 function saveConfig(){const u=document.getElementById('in-url').value.trim().replace(/\/$/,''),k=document.getElementById('in-key').value.trim();if(!u||!k){alert('두 값을 모두 입력');return;}localStorage.setItem('sb_url',u);localStorage.setItem('sb_key',k);document.getElementById('setup').style.display='none';initClient(u,k);}
 function initClient(u,k){
   if(typeof supabase==='undefined'||!supabase.createClient){setConn('bad','라이브러리 미로드');document.getElementById('setup').style.display='block';alert('Supabase 라이브러리 미로드. 인터넷 확인 후 새로고침.');return;}
