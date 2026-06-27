@@ -44,6 +44,7 @@
   .adj button{width:30px;height:30px;border:1.5px solid var(--line);background:#fff;border-radius:8px;font-size:15px;font-weight:800;cursor:pointer;color:var(--slate)}
   .adj button:hover{border-color:var(--blue)}
   #att-list:not(.fixmode) .adj{display:none}
+  #att-list:not(.fixmode) .sess{display:none}
   .fix-toggle{display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-bottom:10px;font-size:12px;font-weight:700;color:var(--muted)}
   .fix-toggle button{border:1.5px solid var(--line);background:#fff;color:var(--muted);font-size:12px;font-weight:800;padding:5px 12px;border-radius:20px;cursor:pointer}
   .fix-toggle button.on{background:var(--amber);color:#fff;border-color:var(--amber)}
@@ -233,7 +234,7 @@ function renderRoster(){
       return `<div class="att-row ${r.present?'present':''}">
         <div class="nm">${r.member.name}${r.member.jersey_no!=null?` <span class="hint">No.${r.member.jersey_no}</span>`:''}
           <span class="tag ${r.source==='added'?'added':''}">${r.source==='added'?'추가투입':'참여투표'}</span>
-          <div class="sub">잔여 ${sess}회${r.deducted?' · 이 훈련 차감됨':''}</div>
+          <div class="sub">${r.present?'✓ 출석 · 1회 차감됨':'미체크'}</div>
         </div>
         <div class="adj">
           <button onclick="adjust(${r.member.id},-1)" title="회차 -1">−</button>
