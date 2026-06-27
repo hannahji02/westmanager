@@ -1,0 +1,500 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WEST 회원 관리 (운영진)</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-top:#dceaf6;--bg-bottom:#f4f8fc;--ink:#1a2b3c;--muted:#6b7d8f;--line:#dce6ef;
+    --card:#ffffff;--slate:#1e2b38;--slate-h:#2c3e4f;--blue:#2f7fd1;--blue-d:#1f5e9e;
+    --sky:#bcdcf3;--sky-soft:#eaf3fb;--pink:#ff5b86;--green:#1f9d6b;--red:#d35a4f;--amber:#d68910;
+    --lv1:#2a9d6f;--lv2:#2f7fd1;--lv3:#d68910;--lv4:#d35a4f;--r:14px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:"Noto Sans KR",-apple-system,"Segoe UI","Malgun Gothic",sans-serif;
+    background:linear-gradient(180deg,var(--bg-top) 0%,var(--bg-bottom) 340px) no-repeat,var(--bg-bottom);
+    min-height:100vh;color:var(--ink);line-height:1.5;-webkit-font-smoothing:antialiased}
+  header{background:transparent;color:var(--ink);padding:18px 20px 6px;display:flex;align-items:center;
+    justify-content:space-between;gap:10px;flex-wrap:wrap}
+  .brand{display:flex;align-items:center;gap:9px;font-weight:800;font-size:17px;color:var(--slate)}
+  .puck{width:20px;height:20px;border-radius:50%;background:var(--slate)}
+  .htools{display:flex;align-items:center;gap:8px}
+  .conn{font-size:11px;font-weight:700;padding:4px 11px;border-radius:20px}
+  .conn.ok{background:#e6f5ee;color:var(--green)}.conn.bad{background:#fdeceb;color:var(--red)}.conn.wait{background:#fcf3e2;color:var(--amber)}
+  .gear{background:var(--slate);border:0;color:#fff;width:36px;height:36px;border-radius:11px;cursor:pointer;font-size:15px}
+  .gear:hover{background:var(--slate-h)}
+  .bell{position:relative;background:#fff;border:1.5px solid var(--line);color:var(--slate);width:36px;height:36px;border-radius:11px;cursor:pointer;font-size:16px}
+  .bell:hover{border-color:var(--blue)}
+  .bell .dot{position:absolute;top:-4px;right:-4px;min-width:17px;height:17px;padding:0 4px;background:var(--pink);color:#fff;border-radius:20px;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center}
+  .wrap{max-width:1100px;margin:0 auto;padding:10px 20px 40px}
+  .stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:16px}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px;box-shadow:0 1px 3px rgba(31,94,158,.05)}
+  .stat.clickable{cursor:pointer;transition:.15s}.stat.clickable:hover{border-color:var(--blue);box-shadow:0 4px 14px rgba(47,127,209,.12)}
+  .stat .l{font-size:11.5px;color:var(--muted);font-weight:600}
+  .stat .v{font-size:25px;font-weight:800;color:var(--slate);margin-top:3px}
+  .stat .hintclick{font-size:10.5px;color:var(--blue);font-weight:700;margin-top:3px}
+  .stat-pay .paybreak{display:flex;gap:16px;margin-top:7px}
+  .stat-pay .paybreak span{display:flex;flex-direction:column;line-height:1.05}
+  .stat-pay .paybreak b{font-size:22px;font-weight:800;color:var(--slate)}
+  .stat-pay .paybreak i{font-size:10.5px;color:var(--muted);font-style:normal;font-weight:600;margin-top:2px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:18px;margin-bottom:16px;box-shadow:0 1px 3px rgba(31,94,158,.05)}
+  .card h2{font-size:15px;margin-bottom:4px;color:var(--slate)}
+  .active-filters{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+  .fchip{background:var(--sky-soft);color:var(--blue-d);font-size:11.5px;font-weight:700;padding:4px 10px;border-radius:20px;display:inline-flex;align-items:center;gap:6px}
+  .fchip button{border:0;background:none;color:var(--blue-d);cursor:pointer;font-weight:900;font-size:13px;line-height:1}
+  .toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+  .toolbar label{font-size:12px;color:var(--muted);font-weight:600;display:flex;align-items:center;gap:5px}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{text-align:left;padding:11px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+  th{color:var(--muted);font-weight:700;font-size:11.5px;position:sticky;top:0;background:#eef4fa;z-index:5;box-shadow:inset 0 -1px 0 var(--line)}
+  tr:last-child td{border-bottom:0}
+  tr.inactive{opacity:.45}
+  .num{display:inline-flex;align-items:center;justify-content:center;min-width:28px;height:28px;padding:0 6px;background:var(--slate);color:#fff;border-radius:8px;font-weight:800;font-size:12.5px}
+  .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11.5px;font-weight:700}
+  .lv-기초반{background:#e4f4ec;color:var(--lv1)}.lv-초급반{background:#e6f0fa;color:var(--lv2)}
+  .lv-중급반{background:#fdf0e0;color:var(--lv3)}.lv-상급반{background:#fae8e6;color:var(--lv4)}.lv-{background:#eef2f6;color:#8295a5}
+  .pill-fee{background:var(--sky-soft);color:var(--blue-d)}.pill-no{background:#f1f5f9;color:#90a1b0}
+  .star{color:var(--amber)}
+  select,input{font:inherit;padding:6px 8px;border:1.5px solid var(--line);border-radius:7px;font-size:12.5px}
+  .jno-input{width:56px;text-align:center;font-weight:800;background:var(--sky-soft);border-color:var(--sky)}
+  .jno-input.empty{background:#f1f5f9;color:#9aabba;border-color:var(--line)}
+  .sess-input{width:58px;text-align:center;font-weight:800;background:#fff7ec;border-color:#f3e2bf;color:#8a6516}
+  .sess-input.zero{background:#fdeceb;border-color:#f3c7c2;color:#a23b30}
+  .chk{width:17px;height:17px;cursor:pointer;accent-color:var(--blue)}
+  .sortbtn{border:0;background:#e7eef5;color:var(--muted);font-size:9px;padding:2px 4px;border-radius:5px;cursor:pointer;letter-spacing:-1px}
+  .sortbtn.asc{background:var(--blue);color:#fff}.sortbtn.desc{background:var(--slate);color:#fff}
+  .filtbtn{border:0;background:#e7eef5;color:var(--muted);font-size:11px;padding:1px 6px;border-radius:5px;cursor:pointer;font-weight:800}
+  .filtbtn.active{background:var(--blue);color:#fff}
+  .searchbtn{border:0;background:#e7eef5;font-size:11px;padding:2px 6px;border-radius:5px;cursor:pointer}
+  .name-search{margin-left:4px;width:110px;border-color:var(--blue)}
+  .name-search.hidden{display:none}
+  .pay3{display:inline-flex;border:1.5px solid var(--line);border-radius:9px;overflow:hidden}
+  .pay3 .seg{border:0;background:#fff;padding:5px 10px;font-size:11px;font-weight:800;cursor:pointer;color:#aab8c6;border-right:1px solid var(--line);min-width:32px}
+  .pay3 .seg:last-child{border-right:0}
+  .pay3 .seg.on.ok{background:var(--sky);color:var(--blue-d)}
+  .pay3 .seg.on.no{background:#fad9d4;color:#a23b30}
+  .pay3 .seg.on.rest{background:#dfe7ee;color:#5b7184}
+  .pay3.locked .seg{cursor:default;padding:5px 13px}
+  .btn{background:var(--slate);color:#fff;border:0;padding:9px 16px;border-radius:11px;font-weight:700;cursor:pointer;font-size:13px}
+  .btn:hover{background:var(--slate-h)}.btn.ghost{background:#fff;color:var(--slate);border:1.5px solid var(--line)}
+  .btn.sm{padding:6px 12px;font-size:12px}
+  .btn.x{background:#fdeceb;color:var(--red);padding:5px 11px;font-size:11.5px;font-weight:800;border-radius:8px}
+  .btn.x:hover{background:var(--red);color:#fff}
+  .btn.restore{background:#e6f5ee;color:var(--green)}
+  .bulkbar{position:sticky;bottom:0;background:var(--slate);color:#fff;border-radius:var(--r);padding:12px 14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:14px;box-shadow:0 -4px 16px rgba(30,43,56,.2)}
+  .bulkbar.hidden{display:none}.bulkbar .cnt{font-weight:800;color:var(--sky)}.bulkbar select{background:#fff;color:var(--ink)}
+  .filter-pop{position:fixed;z-index:120;display:none;background:#fff;border:1px solid var(--line);border-radius:11px;box-shadow:0 8px 24px rgba(30,43,56,.16);padding:10px;min-width:160px}
+  .filter-pop.open{display:block}
+  .fp-head{font-size:12px;font-weight:800;margin-bottom:8px}
+  .fp-list{max-height:200px;overflow:auto;display:flex;flex-direction:column;gap:5px;margin-bottom:10px}
+  .fp-list label{display:flex;align-items:center;gap:7px;font-size:12.5px;cursor:pointer}
+  .fp-btns{display:flex;gap:6px;justify-content:flex-end}
+  .ov{position:fixed;inset:0;background:rgba(30,43,56,.5);display:none;align-items:flex-start;justify-content:center;z-index:100;padding:30px 12px;overflow:auto}
+  .ov.open{display:flex}
+  .modal{background:#fff;border-radius:18px;max-width:760px;width:100%;overflow:hidden}
+  .modal .mh{background:var(--slate);color:#fff;padding:15px 18px;display:flex;justify-content:space-between;align-items:center;font-weight:800}
+  .modal .mc{padding:18px;max-height:64vh;overflow:auto}
+  .modal .close{background:none;border:0;color:#b9c7d4;font-size:22px;cursor:pointer}
+  .addrow{background:var(--sky-soft);border:1px dashed var(--sky);border-radius:11px;padding:13px;margin-bottom:16px}
+  .row{display:flex;gap:9px;flex-wrap:wrap;align-items:center}
+  .jgrid{display:grid;grid-template-columns:repeat(10,1fr);gap:5px}
+  .jcell{aspect-ratio:1;border:1px solid var(--line);border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:10px;padding:2px;text-align:center;background:#fafcfe;cursor:pointer}
+  .jcell:hover{border-color:var(--blue)}
+  .jcell .jn{font-size:10px;color:#9aabba;font-weight:700}
+  .jcell.filled{background:var(--sky-soft);border-color:var(--sky)}
+  .jcell.filled .jname{font-size:11px;font-weight:800;color:var(--slate);line-height:1.1}
+  .jcell.filled .jn{color:var(--blue)}
+  .jcell.picking{grid-column:span 2;aspect-ratio:auto;background:#fff;border-color:var(--blue);gap:4px;padding:6px;cursor:default}
+  .jpick-sel{width:100%;font-size:11px}.jpick-btns{display:flex;gap:4px;width:100%}
+  .jpick-btns button{flex:1;border:0;border-radius:6px;padding:4px 0;font-size:11px;font-weight:800;cursor:pointer;background:var(--blue);color:#fff}
+  .jpick-btns button.c{background:#eef1f4;color:var(--muted)}
+  .ntf-row{display:flex;align-items:flex-start;gap:12px;padding:13px 4px;border-bottom:1px solid var(--line)}
+  .ntf-row:last-child{border-bottom:0}
+  .ntf-row.unread{background:#fff8ec;border-radius:10px;padding:13px 12px}
+  .ntf-ic{font-size:18px;margin-top:1px}
+  .ntf-body{flex:1}
+  .ntf-msg{font-size:13.5px;font-weight:700;color:var(--slate)}
+  .ntf-meta{font-size:11px;color:var(--muted);margin-top:3px}
+  .ntf-method{display:inline-block;font-size:10.5px;font-weight:800;padding:1px 8px;border-radius:20px;margin-right:6px}
+  .ntf-method.card{background:var(--sky-soft);color:var(--blue-d)}
+  .ntf-method.bank{background:#e4f4ec;color:var(--lv1)}
+  .setup{background:#fff;border:1px solid var(--line);border-radius:18px;padding:28px;max-width:600px;margin:40px auto;line-height:1.7;box-shadow:0 4px 20px rgba(31,94,158,.08)}
+  .setup h2{font-size:18px;margin-bottom:12px;color:var(--slate)}.setup input{width:100%;margin:6px 0 14px;padding:10px}
+  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--slate);color:#fff;padding:11px 20px;border-radius:12px;font-size:13px;font-weight:600;opacity:0;transition:.2s;z-index:200;pointer-events:none}
+  .toast.show{opacity:1}
+  .hint{font-size:12px;color:var(--muted)}
+  @media(max-width:680px){
+    .wrap{padding:12px}.stat-grid{grid-template-columns:repeat(2,1fr)}.jgrid{grid-template-columns:repeat(5,1fr)}
+    .bulkbar{flex-direction:column;align-items:stretch}.bulkbar select,.bulkbar .btn{width:100%}
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><span class="puck"></span> WEST 회원 관리 <span class="hint" style="color:#9db6cc;font-weight:600">운영진</span></div>
+  <div class="htools">
+    <span class="conn wait" id="conn">연결 대기</span>
+    <button class="bell" id="bellBtn" title="레슨권 구매 알림" onclick="openNotif()">🔔<span class="dot" id="bell-dot" style="display:none">0</span></button>
+    <button class="btn sm" id="addBtn" onclick="openAdd()">＋ 신규 회원 추가</button>
+    <button class="gear" id="gearBtn" title="회원 비활성·복구" onclick="openManage()">&#9881;</button>
+  </div>
+</header>
+
+<div id="setup" class="setup" style="display:none">
+  <h2>Supabase 연결 설정 (최초 1회)</h2>
+  <p class="hint" style="margin-bottom:16px">Settings → API 의 Project URL과 publishable key를 넣으세요. 이 브라우저에만 저장됩니다.</p>
+  <label><b>Project URL</b></label><input id="in-url" placeholder="https://xxxxx.supabase.co">
+  <label><b>publishable key</b></label><input id="in-key" placeholder="sb_publishable_...">
+  <button class="btn" onclick="saveConfig()">연결하기</button>
+</div>
+
+<div id="main" class="wrap" style="display:none">
+  <div class="stat-grid">
+    <div class="stat"><div class="l">전체 회원</div><div class="v" id="s-total">–</div></div>
+    <div class="stat clickable" onclick="openJersey()"><div class="l">등번호 배정</div><div class="v" id="s-jersey">–</div><div class="hintclick">눌러서 배치도 ▦</div></div>
+    <div class="stat"><div class="l">장비 대여 중</div><div class="v" id="s-equip">–</div></div>
+    <div class="stat stat-pay"><div class="l">이번 달 납부 현황</div>
+      <div class="paybreak"><span><b id="s-pay-ok">–</b><i>납부</i></span><span><b id="s-pay-no">–</b><i>미납</i></span><span><b id="s-pay-rest">–</b><i>휴식</i></span></div>
+    </div>
+  </div>
+  <div class="card">
+    <h2>회원 통합 명단 <span class="hint" id="sub"></span></h2>
+    <div class="active-filters" id="active-filters"></div>
+    <div class="toolbar">
+      <label><input type="checkbox" class="chk" id="show-inactive" onchange="render()"> 비활성 포함 보기</label>
+    </div>
+    <div style="overflow-x:auto">
+      <table>
+        <thead><tr>
+          <th><input type="checkbox" class="chk" id="chk-all" onclick="toggleAll(this)"></th>
+          <th>등번호 <button class="sortbtn" id="sort-no" onclick="toggleSort('no')">▲▼</button></th>
+          <th>이름 <button class="searchbtn" onclick="toggleSearch(event)">🔍</button><input type="text" id="name-search" class="name-search hidden" placeholder="이름" oninput="render()" onclick="event.stopPropagation()"></th>
+          <th>잔여회차 <button class="sortbtn" id="sort-sess" onclick="toggleSort('sess')">▲▼</button></th>
+          <th>포지션 <button class="filtbtn" id="filt-position" onclick="openFilter('position',this,event)">▾</button></th>
+          <th>레벨 <button class="filtbtn" id="filt-level" onclick="openFilter('level',this,event)">▾</button></th>
+          <th>회비유형 <button class="filtbtn" id="filt-fee_type" onclick="openFilter('fee_type',this,event)">▾</button></th>
+          <th>납부 <button class="filtbtn" id="filt-pay_status" onclick="openFilter('pay_status',this,event)">▾</button></th>
+          <th>장비 <button class="filtbtn" id="filt-equip" onclick="openFilter('equip',this,event)">▾</button></th>
+        </tr></thead>
+        <tbody id="tb"></tbody>
+      </table>
+    </div>
+    <div class="bulkbar hidden" id="bulkbar">
+      <span class="cnt"><span id="bulk-cnt">0</span>명 선택</span>
+      <select id="bulk-field" onchange="bulkFieldChange()">
+        <option value="position">포지션</option><option value="level">레벨</option>
+        <option value="fee_type">회비유형</option><option value="pay_status">납부</option><option value="equip_rental">장비</option>
+      </select>
+      <select id="bulk-value"></select>
+      <button class="btn sm" onclick="applyBulk()">일괄 적용</button>
+      <button class="btn sm ghost" onclick="clearSel()" style="background:transparent;color:#fff;border-color:rgba(255,255,255,.4)">선택 해제</button>
+    </div>
+  </div>
+</div>
+
+<div id="filter-pop" class="filter-pop">
+  <div class="fp-head" id="fp-title">필터</div>
+  <div class="fp-list" id="fp-list"></div>
+  <div class="fp-btns"><button class="btn sm ghost" onclick="clearFilter()">해제</button><button class="btn sm" onclick="applyFilter()">적용</button></div>
+</div>
+
+<div class="ov" id="jerseyOv"><div class="modal">
+  <div class="mh"><span>&#9638; 등번호 배치도</span><button class="close" onclick="closeJersey()">&times;</button></div>
+  <div class="mc"><div class="hint" style="margin-bottom:10px">빈칸 클릭=배정 · 배정칸 클릭=해제</div><div class="jgrid" id="jgrid"></div></div>
+</div></div>
+
+<div class="ov" id="notifOv"><div class="modal" style="max-width:520px">
+  <div class="mh"><span>🔔 추가 레슨권 구매 알림</span><button class="close" onclick="closeNotif()">&times;</button></div>
+  <div class="mc">
+    <div style="display:flex;justify-content:flex-end;margin-bottom:8px"><button class="btn sm ghost" id="markAllBtn" onclick="markAllRead()">모두 읽음 처리</button></div>
+    <div id="notif-list"></div>
+  </div>
+</div></div>
+
+<div class="ov" id="addOv"><div class="modal" style="max-width:440px">
+  <div class="mh"><span>＋ 신규 회원 추가</span><button class="close" onclick="closeAdd()">&times;</button></div>
+  <div class="mc">
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div><label class="hint" style="font-weight:700;display:block;margin-bottom:4px">이름 <span style="color:var(--red)">*</span></label>
+        <input id="add-name" placeholder="예: 홍길동" style="width:100%"></div>
+      <div><label class="hint" style="font-weight:700;display:block;margin-bottom:4px">등번호 <span style="font-weight:400">(선택)</span></label>
+        <input id="add-no" type="number" min="1" max="100" placeholder="비워두면 미배정" style="width:100%"></div>
+      <div><label class="hint" style="font-weight:700;display:block;margin-bottom:4px">잔여회차 <span style="font-weight:400">(선택)</span></label>
+        <input id="add-sess" type="number" min="0" placeholder="비워두면 0" style="width:100%"></div>
+      <div><label class="hint" style="font-weight:700;display:block;margin-bottom:4px">회비유형 <span style="font-weight:400">(선택)</span></label>
+        <select id="add-fee" style="width:100%"><option>없음</option><option>제니스</option><option>장한평</option><option>통합권</option><option>휴식</option></select></div>
+      <button class="btn" onclick="addMember()" style="margin-top:4px">회원 추가</button>
+    </div>
+  </div>
+</div></div>
+
+<div class="ov" id="manageOv"><div class="modal">
+  <div class="mh"><span>&#9881; 회원 비활성 · 복구</span><button class="close" onclick="closeManage()">&times;</button></div>
+  <div class="mc">
+    <div style="overflow-x:auto"><table>
+      <thead><tr><th>이름</th><th>등번호</th><th>회비</th><th>상태</th><th></th></tr></thead>
+      <tbody id="tb-manage"></tbody>
+    </table></div>
+  </div>
+</div></div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const LEVELS=["기초반","초급반","중급반","상급반"];
+const POSITIONS=[["F","플레이어F"],["D","플레이어D"],["골리","골리"]];
+const POS_LABEL={"F":"플레이어F","D":"플레이어D","골리":"골리"};
+const FEES=["없음","제니스","장한평","통합권","휴식"];
+const PAY=["납부","미납","휴식"], PAY_GLYPH={"납부":"O","미납":"X","휴식":"🌴"};
+let sb=null, members=[], notifs=[], selected=new Set(), sortState={field:null,dir:1};
+let filters={position:null,level:null,fee_type:null,pay_status:null,equip:null};
+
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1600);}
+function setConn(s,t){const c=document.getElementById('conn');c.className='conn '+s;c.textContent=t;}
+
+function loadConfig(){const u=localStorage.getItem('sb_url'),k=localStorage.getItem('sb_key');if(u&&k)initClient(u,k);else document.getElementById('setup').style.display='block';}
+function saveConfig(){const u=document.getElementById('in-url').value.trim().replace(/\/$/,''),k=document.getElementById('in-key').value.trim();if(!u||!k){alert('두 값을 모두 입력');return;}localStorage.setItem('sb_url',u);localStorage.setItem('sb_key',k);document.getElementById('setup').style.display='none';initClient(u,k);}
+function initClient(u,k){
+  if(typeof supabase==='undefined'||!supabase.createClient){setConn('bad','라이브러리 미로드');document.getElementById('setup').style.display='block';alert('Supabase 라이브러리 미로드. 인터넷 확인 후 새로고침.');return;}
+  try{sb=supabase.createClient(u,k);document.getElementById('main').style.display='block';loadMembers();loadNotifs();}
+  catch(e){setConn('bad','연결 실패');alert('연결 실패: '+e.message);}
+}
+async function loadMembers(){
+  setConn('wait','불러오는 중…');
+  const {data,error}=await sb.from('members').select('*').order('id');
+  if(error){setConn('bad','오류');document.getElementById('sub').textContent='오류: '+error.message;return;}
+  members=data;setConn('ok','연결됨 ✓');render();
+}
+async function loadNotifs(){
+  const {data,error}=await sb.from('notifications').select('*').eq('type','lesson_purchase').order('created_at',{ascending:false});
+  if(error)return; notifs=data||[]; renderBell();
+}
+function renderBell(){
+  const unread=notifs.filter(n=>!n.is_read).length;
+  const d=document.getElementById('bell-dot');
+  if(unread>0){d.style.display='flex';d.textContent=unread>99?'99+':unread;}else d.style.display='none';
+}
+
+function effPay(m){return m.fee_type==='휴식'?'휴식':m.pay_status;}
+
+function visibleRows(){
+  let rows=members.filter(m=>document.getElementById('show-inactive').checked?true:m.status!=='inactive');
+  const q=(document.getElementById('name-search').value||'').trim();
+  if(q) rows=rows.filter(m=>m.name.includes(q));
+  Object.keys(filters).forEach(f=>{
+    if(!filters[f])return;
+    if(f==='position') rows=rows.filter(m=>filters.position.has(m.position?POS_LABEL[m.position]:'미지정'));
+    else if(f==='level') rows=rows.filter(m=>filters.level.has(m.level||'미지정'));
+    else if(f==='fee_type') rows=rows.filter(m=>filters.fee_type.has(m.fee_type));
+    else if(f==='pay_status') rows=rows.filter(m=>filters.pay_status.has(effPay(m)));
+    else if(f==='equip') rows=rows.filter(m=>filters.equip.has(m.equip_rental?'대여':'없음'));
+  });
+  if(sortState.field==='no') rows.sort((a,b)=>{const av=a.jersey_no==null?9999:a.jersey_no,bv=b.jersey_no==null?9999:b.jersey_no;return av===bv?0:(av<bv?-1:1)*sortState.dir;});
+  else if(sortState.field==='sess') rows.sort((a,b)=>{const av=a.remaining_sessions??0,bv=b.remaining_sessions??0;return av===bv?0:(av<bv?-1:1)*sortState.dir;});
+  return rows;
+}
+
+function render(){
+  const tb=document.getElementById('tb');tb.innerHTML='';
+  const rows=visibleRows();
+  if(rows.length===0) tb.innerHTML='<tr><td colspan="9" class="hint" style="text-align:center;padding:24px">조건에 맞는 회원이 없습니다.</td></tr>';
+  rows.forEach(m=>{
+    const goalie=m.position==='골리';
+    const posOpts=['<option value="">미지정</option>'].concat(POSITIONS.map(([v,t])=>`<option value="${v}" ${v===m.position?'selected':''}>${t}</option>`)).join('');
+    const lvOpts=['<option value="">미지정</option>'].concat(LEVELS.map(l=>`<option ${l===m.level?'selected':''}>${l}</option>`)).join('');
+    const feeOpts=FEES.map(f=>`<option ${f===m.fee_type?'selected':''}>${f}</option>`).join('');
+    const lvCell=goalie?'<span class="hint">–</span>':`<select class="badge lv-${m.level||''}" style="border:0" onchange="upd(${m.id},'level',this.value)">${lvOpts}</select>`;
+    const locked=m.fee_type==='휴식';
+    const pay=locked?`<span class="pay3 locked"><span class="seg on rest">🌴</span></span>`:`<span class="pay3">`+PAY.map(st=>{const on=m.pay_status===st;const cls=on?(st==='납부'?'on ok':st==='미납'?'on no':'on rest'):'';return `<button class="seg ${cls}" onclick="upd(${m.id},'pay_status','${st}')">${PAY_GLYPH[st]}</button>`;}).join('')+`</span>`;
+    const sess=m.remaining_sessions??0;
+    tb.innerHTML+=`<tr class="${m.status==='inactive'?'inactive':''}">
+      <td><input type="checkbox" class="chk rowchk" ${selected.has(m.id)?'checked':''} onclick="toggleRow(${m.id},this)"></td>
+      <td><input type="number" class="jno-input ${m.jersey_no!=null?'':'empty'}" value="${m.jersey_no??''}" min="1" max="100" onchange="updJersey(${m.id},this.value)"></td>
+      <td><b>${m.name}</b>${m.status==='inactive'?' <span class="hint">(비활성)</span>':''}</td>
+      <td><input type="number" class="sess-input ${sess<=0?'zero':''}" value="${sess}" min="0" onchange="updSess(${m.id},this.value)"></td>
+      <td><select onchange="updPos(${m.id},this.value)">${posOpts}</select></td>
+      <td>${lvCell}</td>
+      <td><select onchange="upd(${m.id},'fee_type',this.value)">${feeOpts}</select></td>
+      <td>${pay}</td>
+      <td><input type="checkbox" class="chk" ${m.equip_rental?'checked':''} onchange="upd(${m.id},'equip_rental',this.checked)"></td>
+    </tr>`;
+  });
+  renderStats();renderActiveFilters();syncSort();
+}
+function renderStats(){
+  const act=members.filter(m=>m.status!=='inactive');
+  document.getElementById('s-total').textContent=act.length;
+  document.getElementById('s-jersey').textContent=act.filter(m=>m.jersey_no!=null).length;
+  document.getElementById('s-equip').textContent=act.filter(m=>m.equip_rental).length;
+  document.getElementById('s-pay-ok').textContent=act.filter(m=>effPay(m)==='납부').length;
+  document.getElementById('s-pay-no').textContent=act.filter(m=>effPay(m)==='미납').length;
+  document.getElementById('s-pay-rest').textContent=act.filter(m=>effPay(m)==='휴식').length;
+  document.getElementById('sub').textContent=`${act.length}명`;
+}
+
+async function save(id,patch){
+  const {error}=await sb.from('members').update(patch).eq('id',id);
+  if(error){toast('저장 실패: '+error.message);return false;}
+  Object.assign(members.find(x=>x.id===id),patch);toast('저장됨 ✓');return true;
+}
+async function upd(id,f,v){const patch={[f]:v};if(f==='fee_type'&&v==='휴식')patch.pay_status='휴식';if(await save(id,patch))render();}
+async function updPos(id,v){const patch={position:v||null};if(v==='골리')patch.level=null;if(await save(id,patch))render();}
+async function updJersey(id,val){
+  const v=val===''?null:parseInt(val,10);
+  if(v!==null){if(v<1||v>100){toast('1~100');render();return;}const d=members.find(m=>m.id!==id&&m.jersey_no===v);if(d){toast(`${v}번은 ${d.name}님 사용중`);render();return;}}
+  if(await save(id,{jersey_no:v}))render();
+}
+async function updSess(id,val){
+  let v=val===''?0:parseInt(val,10);
+  if(isNaN(v)||v<0){toast('0 이상의 숫자');render();return;}
+  if(await save(id,{remaining_sessions:v}))render();
+}
+
+function toggleSort(f){if(sortState.field!==f)sortState={field:f,dir:1};else if(sortState.dir===1)sortState.dir=-1;else sortState={field:null,dir:1};render();}
+function syncSort(){
+  [['no','sort-no'],['sess','sort-sess']].forEach(([f,id])=>{
+    const b=document.getElementById(id);if(!b)return;b.className='sortbtn';b.textContent='▲▼';
+    if(sortState.field===f){b.classList.add(sortState.dir===1?'asc':'desc');b.textContent=sortState.dir===1?'▲':'▼';}
+  });
+}
+function toggleSearch(e){e.stopPropagation();const i=document.getElementById('name-search');i.classList.toggle('hidden');if(!i.classList.contains('hidden'))i.focus();else{i.value='';render();}}
+
+let filterTarget=null;
+function fOpts(f){if(f==='position')return['플레이어F','플레이어D','골리','미지정'];if(f==='level')return['기초반','초급반','중급반','상급반','미지정'];if(f==='fee_type')return FEES.slice();if(f==='pay_status')return['납부','미납','휴식'];if(f==='equip')return['대여','없음'];}
+function openFilter(f,btn,e){e.stopPropagation();const p=document.getElementById('filter-pop');if(p.classList.contains('open')&&filterTarget===f){p.classList.remove('open');filterTarget=null;return;}filterTarget=f;
+  document.getElementById('fp-title').textContent={position:'포지션',level:'레벨',fee_type:'회비유형',pay_status:'납부',equip:'장비'}[f]+' 필터';
+  const cur=filters[f];document.getElementById('fp-list').innerHTML=fOpts(f).map(o=>`<label><input type="checkbox" class="chk" value="${o}" ${(!cur||cur.has(o))?'checked':''}> ${o}</label>`).join('');
+  const r=btn.getBoundingClientRect();p.style.top=(r.bottom+6)+'px';p.style.left=Math.min(r.left,window.innerWidth-180)+'px';p.classList.add('open');}
+function applyFilter(){const ch=[...document.querySelectorAll('#fp-list input:checked')].map(i=>i.value);const all=fOpts(filterTarget);filters[filterTarget]=(ch.length===0||ch.length===all.length)?null:new Set(ch);document.getElementById('filter-pop').classList.remove('open');render();}
+function clearFilter(){filters[filterTarget]=null;document.getElementById('filter-pop').classList.remove('open');render();}
+function renderActiveFilters(){const box=document.getElementById('active-filters');box.innerHTML='';const nm={position:'포지션',level:'레벨',fee_type:'회비',pay_status:'납부',equip:'장비'};Object.keys(filters).forEach(f=>{const b=document.getElementById('filt-'+f);if(b)b.classList.toggle('active',!!filters[f]);if(filters[f])box.innerHTML+=`<span class="fchip">${nm[f]}: ${[...filters[f]].join(', ')}<button onclick="rmFilter('${f}')">×</button></span>`;});}
+function rmFilter(f){filters[f]=null;render();}
+document.addEventListener('click',e=>{const p=document.getElementById('filter-pop');if(p.classList.contains('open')&&!p.contains(e.target)&&!e.target.classList.contains('filtbtn'))p.classList.remove('open');});
+
+function toggleRow(id,el){el.checked?selected.add(id):selected.delete(id);syncBulk();}
+function toggleAll(el){selected.clear();if(el.checked)visibleRows().forEach(m=>selected.add(m.id));document.querySelectorAll('.rowchk').forEach(c=>c.checked=el.checked);syncBulk();}
+function clearSel(){selected.clear();document.getElementById('chk-all').checked=false;document.querySelectorAll('.rowchk').forEach(c=>c.checked=false);syncBulk();}
+function syncBulk(){document.getElementById('bulk-cnt').textContent=selected.size;document.getElementById('bulkbar').classList.toggle('hidden',selected.size===0);bulkFieldChange();}
+function bulkFieldChange(){const f=document.getElementById('bulk-field').value;const s=document.getElementById('bulk-value');let o=[];
+  if(f==='position')o=POSITIONS.map(([v,t])=>[v,t]).concat([['','미지정']]);
+  else if(f==='level')o=LEVELS.map(l=>[l,l]).concat([['','미지정']]);
+  else if(f==='fee_type')o=FEES.map(x=>[x,x]);
+  else if(f==='pay_status')o=PAY.map(x=>[x,x]);
+  else o=[['true','대여 O'],['false','대여 X']];
+  s.innerHTML=o.map(([v,t])=>`<option value="${v}">${t}</option>`).join('');}
+async function applyBulk(){
+  if(selected.size===0)return;
+  const f=document.getElementById('bulk-field').value;let v=document.getElementById('bulk-value').value;
+  if(f==='equip_rental')v=(v==='true');
+  const ids=[...selected];
+  for(const id of ids){
+    const patch={};
+    if(f==='position'){patch.position=v||null;if(v==='골리')patch.level=null;}
+    else if(f==='fee_type'){patch.fee_type=v;if(v==='휴식')patch.pay_status='휴식';}
+    else patch[f]=v;
+    const {error}=await sb.from('members').update(patch).eq('id',id);
+    if(!error)Object.assign(members.find(x=>x.id===id),patch);
+  }
+  toast(`${ids.length}명 일괄 적용 ✓`);render();
+}
+
+let jpick=null;
+function openJersey(){jpick=null;renderJ();document.getElementById('jerseyOv').classList.add('open');}
+function closeJersey(){document.getElementById('jerseyOv').classList.remove('open');}
+function renderJ(){
+  const byNo={};members.filter(m=>m.status!=='inactive').forEach(m=>{if(m.jersey_no!=null)byNo[m.jersey_no]=m;});
+  const free=members.filter(m=>m.jersey_no==null&&m.status!=='inactive');
+  const g=document.getElementById('jgrid');g.innerHTML='';
+  for(let n=1;n<=100;n++){const m=byNo[n];
+    if(jpick===n&&!m){const o=free.map(x=>`<option value="${x.id}">${x.name}</option>`).join('');
+      g.innerHTML+=`<div class="jcell picking" onclick="event.stopPropagation()"><span class="jn">${n}</span><select class="jpick-sel" id="jpsel">${o}</select><div class="jpick-btns"><button onclick="confirmPick(${n})">배정</button><button class="c" onclick="cancelPick()">취소</button></div></div>`;}
+    else g.innerHTML+=`<div class="jcell ${m?'filled':''}" onclick="jcell(${n})"><span class="jn">${n}</span>${m?`<span class="jname">${m.name}</span>`:''}</div>`;
+  }
+}
+async function jcell(n){const m=members.find(x=>x.jersey_no===n&&x.status!=='inactive');
+  if(m){if(await save(m.id,{jersey_no:null})){jpick=null;renderJ();render();}return;}
+  if(members.filter(x=>x.jersey_no==null&&x.status!=='inactive').length===0){toast('미배정 회원 없음');return;}jpick=n;renderJ();}
+async function confirmPick(n){const id=parseInt(document.getElementById('jpsel').value,10);if(await save(id,{jersey_no:n})){jpick=null;renderJ();render();}}
+function cancelPick(){jpick=null;renderJ();}
+
+function openNotif(){renderNotif();document.getElementById('notifOv').classList.add('open');}
+function closeNotif(){document.getElementById('notifOv').classList.remove('open');}
+function renderNotif(){
+  const box=document.getElementById('notif-list');
+  if(notifs.length===0){box.innerHTML='<div class="hint" style="text-align:center;padding:30px">아직 레슨권 구매 알림이 없습니다.</div>';document.getElementById('markAllBtn').style.display='none';return;}
+  document.getElementById('markAllBtn').style.display=notifs.some(n=>!n.is_read)?'inline-block':'none';
+  box.innerHTML=notifs.map(n=>{
+    const d=n.created_at?new Date(n.created_at):null;
+    const ds=d?`${d.getMonth()+1}.${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`:'';
+    const isCard=n.method==='카드결제';
+    const mcls=isCard?'card':'bank';
+    const ic=isCard?'💳':'🏦';
+    return `<div class="ntf-row ${n.is_read?'':'unread'}" onclick="markRead(${n.id})" style="cursor:${n.is_read?'default':'pointer'}">
+      <div class="ntf-ic">${ic}</div>
+      <div class="ntf-body">
+        <div class="ntf-msg"><span class="ntf-method ${mcls}">${n.method||'-'}</span>${n.message||((n.member_name||'회원')+'님이 추가 레슨권 구매를 선택하였습니다.')}</div>
+        <div class="ntf-meta">${ds}${n.is_read?'':' · 안 읽음 (클릭하면 읽음 처리)'}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+async function markRead(id){
+  const n=notifs.find(x=>x.id===id);if(!n||n.is_read)return;
+  const {error}=await sb.from('notifications').update({is_read:true}).eq('id',id);
+  if(error){toast('처리 실패: '+error.message);return;}
+  n.is_read=true;renderNotif();renderBell();
+}
+async function markAllRead(){
+  const ids=notifs.filter(n=>!n.is_read).map(n=>n.id);if(ids.length===0)return;
+  const {error}=await sb.from('notifications').update({is_read:true}).in('id',ids);
+  if(error){toast('처리 실패: '+error.message);return;}
+  notifs.forEach(n=>{if(ids.includes(n.id))n.is_read=true;});renderNotif();renderBell();toast('모두 읽음 처리 ✓');
+}
+
+function openAdd(){document.getElementById('add-name').value='';document.getElementById('add-no').value='';document.getElementById('add-sess').value='';document.getElementById('add-fee').value='없음';document.getElementById('addOv').classList.add('open');setTimeout(()=>document.getElementById('add-name').focus(),50);}
+function closeAdd(){document.getElementById('addOv').classList.remove('open');}
+function openManage(){renderManage();document.getElementById('manageOv').classList.add('open');}
+function closeManage(){document.getElementById('manageOv').classList.remove('open');}
+function renderManage(){
+  const tb=document.getElementById('tb-manage');tb.innerHTML='';
+  members.forEach(m=>{
+    const inact=m.status==='inactive';
+    tb.innerHTML+=`<tr><td><b>${m.name}</b></td><td>${m.jersey_no??'<span class="hint">미배정</span>'}</td><td>${m.fee_type}</td>
+      <td>${inact?'<span class="hint">비활성</span>':'활성'}</td>
+      <td style="text-align:right">${inact?`<button class="btn x restore" onclick="setStatus(${m.id},'active')">복구</button>`:`<button class="btn x" onclick="setStatus(${m.id},'inactive')">비활성</button>`}</td></tr>`;
+  });
+}
+async function addMember(){
+  const name=document.getElementById('add-name').value.trim();if(!name){alert('이름은 필수입니다.');return;}
+  const noV=document.getElementById('add-no').value, fee=document.getElementById('add-fee').value;
+  const sessV=document.getElementById('add-sess').value;
+  let no=null;
+  if(noV!==''){no=parseInt(noV,10);
+    if(no<1||no>100){alert('등번호는 1~100 사이입니다.');return;}
+    const dup=members.find(m=>m.jersey_no===no);
+    if(dup){alert(`${no}번은 이미 ${dup.name}님이 사용 중입니다.`);return;}
+  }
+  let sess=0; if(sessV!==''){sess=parseInt(sessV,10);if(isNaN(sess)||sess<0){alert('잔여회차는 0 이상의 숫자입니다.');return;}}
+  const row={name,jersey_no:no,fee_type:fee,pay_status:fee==='휴식'?'휴식':'미납',status:'active',role:'회원',remaining_sessions:sess};
+  const {data,error}=await sb.from('members').insert(row).select();
+  if(error){toast('추가 실패: '+error.message);return;}
+  members.push(data[0]);
+  closeAdd();toast(`${name}님 추가됨 ✓`);render();
+}
+async function setStatus(id,st){
+  const m=members.find(x=>x.id===id);
+  if(st==='inactive'&&!confirm(`${m.name} 님을 비활성화할까요? (명단에서 숨겨지고 데이터는 보존됩니다)`))return;
+  if(await save(id,{status:st})){renderManage();render();}
+}
+[...document.querySelectorAll('.ov')].forEach(ov=>ov.addEventListener('click',e=>{if(e.target===ov)ov.classList.remove('open');}));
+
+window.addEventListener('load',()=>{loadConfig();bulkFieldChange();});
+</script>
+</body>
+</html>
